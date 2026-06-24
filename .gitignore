@@ -1,0 +1,25 @@
+# VCS build artifacts
+simv
+simv.daidir/
+compile.log
+sim.log
+AN.DB/
+csrc/
+vc_hdrs.h
+uvm_dpi.so*
+DVEfiles/
+inter.vpd
+
+# Verdi artifacts
+verdiLog/
+novas.*
+*.fsdb
+*.vcd
+
+# Waves
+waves/
+
+# Editors
+*.swp
+*.swo
+*~
