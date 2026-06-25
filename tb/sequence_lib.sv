@@ -1,4 +1,6 @@
 // APB Sequence Library
+import uvm_pkg::*;
+`include "uvm_macros.svh"
 import apb_pkg::*;
 
 // ---------------------------------------------------------------

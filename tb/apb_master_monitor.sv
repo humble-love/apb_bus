@@ -1,3 +1,7 @@
+import uvm_pkg::*;
+`include "uvm_macros.svh"
+import apb_pkg::*;
+
 // APB Master UVM Monitor
 // Samples APB bus and sends observed transactions to analysis port
 

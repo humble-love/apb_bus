@@ -1,3 +1,7 @@
+import uvm_pkg::*;
+`include "uvm_macros.svh"
+import apb_pkg::*;
+
 // APB Scoreboard — Reference Model
 // Maintains golden mirror of memory and GPIO registers
 // Compares read data against expected value

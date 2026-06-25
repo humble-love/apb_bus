@@ -49,12 +49,29 @@ bus/
 
 ## 环境要求
 
-| 工具 | 用途 |
+| 工具 | 版本 |
 |------|------|
-| VCS (Synopsys) | 编译 + 仿真 |
-| Verdi (Synopsys) | 波形查看 |
+| VCS (Synopsys) | O-2018.09-SP2 |
+| Verdi (Synopsys) | O-2018.09-SP2 |
 
-Ensure `VCS_HOME` and `VERDI_HOME` are set, or edit the paths in `scripts/compile.sh`.
+### 环境变量
+
+脚本内置默认路径，也可以 export 覆盖：
+
+```bash
+export VCS_HOME=/home/openclaw/hardware/Synopsys/Install/vcs/O-2018.09-SP2
+export VERDI_HOME=/home/openclaw/hardware/Synopsys/Install/verdi/Verdi_O-2018.09-SP2
+export LM_LICENSE_FILE=27000@<your-license-host>
+export SNPSLMD_LICENSE_FILE=27000@<your-license-host>
+```
+
+### 已知兼容性问题
+
+| 问题 | 解决 |
+|------|------|
+| `/bin/sh → dash` 不支持 VCS 的 `sh -f` | `compile.sh` 自动通过 `bwrap` 绑定 `/bin/bash` 到 `/usr/bin/dash` |
+| glibc 2.34+ 移除 `pthread_yield` | 编译时链接 `pthread_yield_compat.o`（已内置） |
+| VCS 2018 需要 `dc` 计算器 | 确保 `dc` 在 PATH 中（脚本自动加 `~/.local/bin`） |
 
 ## 快速开始
 
@@ -159,12 +176,13 @@ make clean
 
 ## 编译脚本自定义
 
-如果 VCS/Verdi 路径不同，设置环境变量：
+如果 VCS/Verdi 路径或许可证不同，通过环境变量覆盖：
 
 ```bash
 export VCS_HOME=/your/vcs/path
 export VERDI_HOME=/your/verdi/path
+export LM_LICENSE_FILE=27000@<your-license-host>
 make compile
 ```
 
-也可以在 `scripts/compile.sh` 中直接修改默认值。
+也可以直接编辑 `scripts/compile.sh`、`scripts/run.sh`、`scripts/verdi.sh` 中的默认值。

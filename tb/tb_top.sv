@@ -82,7 +82,6 @@ module tb_top;
     initial begin
         $fsdbDumpfile("waves/apb.fsdb");
         $fsdbDumpvars(0, tb_top);
-        $fsdbDumpFlush;
     end
 
     // Set virtual interface in config DB and run test

@@ -10,6 +10,14 @@ cd $PROJ_ROOT
 
 TEST=${1:-apb_sanity_test}
 
+# Set up Verdi FSDB dumper library path
+VERDI_HOME=${VERDI_HOME:-/home/openclaw/hardware/Synopsys/Install/verdi/Verdi_O-2018.09-SP2}
+export LD_LIBRARY_PATH="$VERDI_HOME/share/PLI/VCS/linux64:$LD_LIBRARY_PATH"
+
+# License — adjust to your environment
+export LM_LICENSE_FILE=${LM_LICENSE_FILE:-27000@DESKTOP-T4G2P5D}
+export SNPSLMD_LICENSE_FILE=${SNPSLMD_LICENSE_FILE:-27000@DESKTOP-T4G2P5D}
+
 echo "========================================="
 echo " Running Test: $TEST"
 echo "========================================="

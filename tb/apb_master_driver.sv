@@ -1,3 +1,7 @@
+import uvm_pkg::*;
+`include "uvm_macros.svh"
+import apb_pkg::*;
+
 // APB Master UVM Driver
 // Gets transactions from sequencer, drives txn_* stimulus and req/gnt handshake
 

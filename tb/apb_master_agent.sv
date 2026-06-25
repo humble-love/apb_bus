@@ -1,3 +1,7 @@
+import uvm_pkg::*;
+`include "uvm_macros.svh"
+import apb_pkg::*;
+
 // APB Master UVM Agent — Sequencer + Driver + Monitor for one master
 
 class apb_master_agent extends uvm_agent;

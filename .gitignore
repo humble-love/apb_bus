@@ -19,6 +19,15 @@ novas.*
 # Waves
 waves/
 
+# Build logs and temp
+*.log
+tr_db.log
+ucli.key
+vlogan.log
+
+# Deb packages
+*.deb
+
 # Editors
 *.swp
 *.swo

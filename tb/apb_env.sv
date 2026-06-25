@@ -1,3 +1,7 @@
+import uvm_pkg::*;
+`include "uvm_macros.svh"
+import apb_pkg::*;
+
 // APB UVM Environment — 2 master agents + scoreboard
 
 class apb_env extends uvm_env;
