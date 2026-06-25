@@ -20,8 +20,10 @@ module tb_top;
     wire        req_0, gnt_0, req_1, gnt_1;
     wire [31:0] paddr, pwdata, prdata;
     wire        pwrite, psel, penable, pready;
+    wire [3:0]  pwstrb;
     wire [1:0]  psel_slv;
     wire        gpio_int;
+    wire [31:0] gpio_in, gpio_out;
 
     // DUT instantiation
     apb_top u_dut (
@@ -47,13 +49,19 @@ module tb_top;
         .pwdata      (pwdata),
         .prdata      (prdata),
         .pwrite      (pwrite),
+        .pwstrb      (pwstrb),
         .psel        (psel),
         .penable     (penable),
         .pready      (pready),
 
         .psel_slv    (psel_slv),
-        .gpio_int    (gpio_int)
+        .gpio_int    (gpio_int),
+        .gpio_in     (gpio_in),
+        .gpio_out    (gpio_out)
     );
+
+    // GPIO loopback: gpio_out feeds back into gpio_in for self-test
+    assign gpio_in = gpio_out;
 
     // Connect DUT outputs → interface (for UVM to observe)
     assign apb_if_inst.req[0]  = req_0;
@@ -64,6 +72,7 @@ module tb_top;
     assign apb_if_inst.pwdata  = pwdata;
     assign apb_if_inst.prdata  = prdata;
     assign apb_if_inst.pwrite  = pwrite;
+    assign apb_if_inst.pwstrb  = pwstrb;
     assign apb_if_inst.psel    = psel;
     assign apb_if_inst.penable = penable;
     assign apb_if_inst.pready  = pready;

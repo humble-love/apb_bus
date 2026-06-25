@@ -11,9 +11,14 @@ interface apb_if #(
     logic [31:0]  pwdata;
     logic [31:0]  prdata;
     logic         pwrite;
+    logic [3:0]   pwstrb;
     logic         psel;
     logic         penable;
     logic         pready;
+
+    // GPIO external pins
+    logic [31:0]  gpio_in;
+    logic [31:0]  gpio_out;
 
     // Master request/grant (per master)
     logic [NUM_MASTERS-1:0] req;
@@ -34,8 +39,9 @@ interface apb_if #(
 
     // Monitor clocking block
     clocking mon_cb @(posedge pclk);
-        input paddr, pwdata, prdata, pwrite, psel, penable, pready;
+        input paddr, pwdata, prdata, pwrite, pwstrb, psel, penable, pready;
         input req, gnt;
+        input gpio_in, gpio_out;
     endclocking
 
     // Driver modport
@@ -48,8 +54,9 @@ interface apb_if #(
     // Monitor modport
     modport mon_mp (
         input pclk, presetn,
-        input paddr, pwdata, prdata, pwrite, psel, penable, pready,
-        input req, gnt
+        input paddr, pwdata, prdata, pwrite, pwstrb, psel, penable, pready,
+        input req, gnt,
+        input gpio_in, gpio_out
     );
 
 endinterface

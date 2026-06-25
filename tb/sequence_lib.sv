@@ -50,10 +50,26 @@ class apb_sanity_seq extends apb_base_sequence;
     task body();
         bit [31:0] rd;
         `uvm_info("SEQ", "Sanity sequence started", UVM_LOW)
+
+        // Memory slave: write + read back
         write(32'h0000_0000, 32'hDEAD_BEEF);
         read (32'h0000_0000, rd);
+
+        // GPIO slave: DATA register write + read back
         write(32'h0000_1000, 32'hAAAA_5555);
         read (32'h0000_1000, rd);
+
+        // GPIO INT_STATUS W1C test:
+        // 1. Set DIR[0]=1 and DATA[0]=1 → gpio_out[0] rises → INT_STATUS[0] set
+        write(32'h0000_1004, 32'h0000_0001);  // DIR = 0x1
+        write(32'h0000_1000, 32'h0000_0001);  // DATA = 0x1 (triggers gpio_out, looped to gpio_in)
+        // 2. Read INT_STATUS, expect bit 0 set
+        read (32'h0000_100C, rd);
+        // 3. W1C clear bit 0
+        write(32'h0000_100C, 32'h0000_0001);
+        // 4. Read back, expect bit 0 cleared
+        read (32'h0000_100C, rd);
+
         `uvm_info("SEQ", "Sanity sequence done", UVM_LOW)
     endtask
 

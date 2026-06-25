@@ -26,6 +26,8 @@ class apb_scoreboard extends uvm_subscriber #(apb_pkg::apb_transaction);
     function void write(apb_pkg::apb_transaction t);
         int word_idx;
         bit [31:0] expected;
+        bit [31:0] old_gpio_out, new_gpio_out;
+        bit [31:0] rise_bits;
 
         if (t.rw) begin
             // Write: update reference model
@@ -35,12 +37,21 @@ class apb_scoreboard extends uvm_subscriber #(apb_pkg::apb_transaction);
                     ref_mem[word_idx] = t.data;
                 end
                 4'h1: begin
+                    // Compute old gpio_out before register update
+                    old_gpio_out = ref_data & ref_dir;
+
                     case (t.addr[3:2])
                         2'd0: ref_data       = t.data;
                         2'd1: ref_dir        = t.data;
                         2'd2: ref_int_en     = t.data;
-                        2'd3: ref_int_status = t.data;
+                        2'd3: ref_int_status = ref_int_status & (~t.data);  // W1C
                     endcase
+
+                    // Detect gpio_out rising edges (loopback to gpio_in sets INT_STATUS)
+                    new_gpio_out = ref_data & ref_dir;
+                    rise_bits = new_gpio_out & ~old_gpio_out;
+                    if (rise_bits != 0)
+                        ref_int_status = ref_int_status | rise_bits;
                 end
             endcase
         end else begin

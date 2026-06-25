@@ -28,6 +28,7 @@ module apb_top (
     output wire [31:0]  pwdata,
     output wire [31:0]  prdata,
     output wire         pwrite,
+    output wire [3:0]   pwstrb,
     output wire         psel,
     output wire         penable,
     output wire         pready,
@@ -36,16 +37,22 @@ module apb_top (
     output wire [1:0]   psel_slv,
 
     // GPIO interrupt
-    output wire         gpio_int
+    output wire         gpio_int,
+
+    // GPIO external pins
+    input  wire [31:0]  gpio_in,
+    output wire [31:0]  gpio_out
 );
 
     // Internal connections
     wire [31:0] m0_paddr, m0_pwdata, m1_paddr, m1_pwdata;
     wire        m0_pwrite, m0_psel, m0_penable;
     wire        m1_pwrite, m1_psel, m1_penable;
+    wire [3:0]  m0_pwstrb, m1_pwstrb;
 
     wire [31:0] arb_paddr, arb_pwdata;
     wire        arb_pwrite, arb_psel, arb_penable;
+    wire [3:0]  arb_pwstrb;
     wire        arb_pready;
 
     wire [31:0] prdata_slv0, prdata_slv1;
@@ -63,6 +70,7 @@ module apb_top (
         .pwrite    (m0_pwrite),
         .psel      (m0_psel),
         .penable   (m0_penable),
+        .pwstrb    (m0_pwstrb),
         .pready    (pready),
         .txn_req   (txn_req_0),
         .txn_addr  (txn_addr_0),
@@ -82,6 +90,7 @@ module apb_top (
         .pwrite    (m1_pwrite),
         .psel      (m1_psel),
         .penable   (m1_penable),
+        .pwstrb    (m1_pwstrb),
         .pready    (pready),
         .txn_req   (txn_req_1),
         .txn_addr  (txn_addr_1),
@@ -98,6 +107,7 @@ module apb_top (
         .paddr_0   (m0_paddr),
         .pwdata_0  (m0_pwdata),
         .pwrite_0  (m0_pwrite),
+        .pwstrb_0  (m0_pwstrb),
         .psel_0    (m0_psel),
         .penable_0 (m0_penable),
         .req_1     (req_1),
@@ -105,11 +115,13 @@ module apb_top (
         .paddr_1   (m1_paddr),
         .pwdata_1  (m1_pwdata),
         .pwrite_1  (m1_pwrite),
+        .pwstrb_1  (m1_pwstrb),
         .psel_1    (m1_psel),
         .penable_1 (m1_penable),
         .paddr     (arb_paddr),
         .pwdata    (arb_pwdata),
         .pwrite    (arb_pwrite),
+        .pwstrb    (arb_pwstrb),
         .psel      (arb_psel),
         .penable   (arb_penable),
         .pready    (arb_pready)
@@ -131,6 +143,7 @@ module apb_top (
         .pwrite  (arb_pwrite),
         .paddr   (arb_paddr),
         .pwdata  (arb_pwdata),
+        .pwstrb  (arb_pwstrb),
         .prdata  (prdata_slv0),
         .pready  (pready_slv0)
     );
@@ -144,9 +157,12 @@ module apb_top (
         .pwrite   (arb_pwrite),
         .paddr    (arb_paddr),
         .pwdata   (arb_pwdata),
+        .pwstrb   (arb_pwstrb),
         .prdata   (prdata_slv1),
         .pready   (pready_slv1),
-        .gpio_int (gpio_int)
+        .gpio_int (gpio_int),
+        .gpio_in  (gpio_in),
+        .gpio_out (gpio_out)
     );
 
     // PRDATA + PREADY mux from slaves to shared bus
@@ -159,6 +175,7 @@ module apb_top (
     assign paddr   = arb_paddr;
     assign pwdata  = arb_pwdata;
     assign pwrite  = arb_pwrite;
+    assign pwstrb  = arb_pwstrb;
     assign psel    = arb_psel;
     assign penable = arb_penable;
     assign pready  = arb_pready;
