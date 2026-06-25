@@ -15,6 +15,7 @@ verdiLog/
 novas.*
 *.fsdb
 *.vcd
+novas.conf
 
 # Waves
 waves/
