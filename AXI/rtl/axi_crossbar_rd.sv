@@ -140,7 +140,8 @@ module axi_crossbar_rd #(
     // Master AR ready — route from granted slave
     // ============================================================
     generate
-        for (int mi = 0; mi < NUM_MASTERS; mi = mi + 1) begin : m_ar_rdy
+        genvar mi;
+        for (mi = 0; mi < NUM_MASTERS; mi = mi + 1) begin : m_ar_rdy
             logic ar_ready_sig;
             always_comb begin
                 ar_ready_sig = 1'b0;
