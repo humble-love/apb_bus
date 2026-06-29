@@ -1,0 +1,32 @@
+# VCS build artifacts
+simv
+simv.daidir/
+csrc/
+vc_hdrs.h
+
+# Compiled object files
+*.o
+
+# Compile & simulation logs
+compile.log
+sim.log
+vlogan.log
+
+# Verdi / Novas artifacts
+verdiLog/
+novas.conf
+novas_dump.log
+novas.rc
+tr_db.log
+ucli.key
+
+# Waveforms
+waves/*.fsdb
+waves/*.vpd
+
+# Build temp dirs
+build/
+build2/
+
+# IDE / editor
+.claude/
