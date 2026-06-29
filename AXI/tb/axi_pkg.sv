@@ -74,6 +74,7 @@ package axi_pkg;
         rand bit [3:0]  awcache;
         rand bit [2:0]  awprot;
         rand bit [3:0]  awqos;
+        rand bit        awlock;
 
         // Read Address
         rand bit [7:0]  arid;
@@ -84,6 +85,7 @@ package axi_pkg;
         rand bit [3:0]  arcache;
         rand bit [2:0]  arprot;
         rand bit [3:0]  arqos;
+        rand bit        arlock;
 
         // Write data queue (one entry per beat)
         rand bit [255:0] wdata_q[$];
@@ -148,23 +150,139 @@ package axi_pkg;
             }
         }
 
+        // has_both is disabled by default; enable for combined write+read
+        constraint has_both_c { has_both == 0; }
+
+        // Lock access: default to normal (non-exclusive)
+        constraint lock_c { awlock == 0; arlock == 0; }
+
         `uvm_object_utils_begin(axi_transaction)
             `uvm_field_int(awid,    UVM_DEFAULT)
             `uvm_field_int(awaddr,  UVM_DEFAULT)
             `uvm_field_int(awlen,   UVM_DEFAULT)
             `uvm_field_int(awsize,  UVM_DEFAULT)
             `uvm_field_int(awburst, UVM_DEFAULT)
+            `uvm_field_int(awcache, UVM_DEFAULT)
+            `uvm_field_int(awprot,  UVM_DEFAULT)
+            `uvm_field_int(awqos,   UVM_DEFAULT)
+            `uvm_field_int(awlock,  UVM_DEFAULT)
             `uvm_field_int(arid,    UVM_DEFAULT)
             `uvm_field_int(araddr,  UVM_DEFAULT)
             `uvm_field_int(arlen,   UVM_DEFAULT)
             `uvm_field_int(arsize,  UVM_DEFAULT)
             `uvm_field_int(arburst, UVM_DEFAULT)
+            `uvm_field_int(arcache, UVM_DEFAULT)
+            `uvm_field_int(arprot,  UVM_DEFAULT)
+            `uvm_field_int(arqos,   UVM_DEFAULT)
+            `uvm_field_int(arlock,  UVM_DEFAULT)
             `uvm_field_int(is_write, UVM_DEFAULT)
             `uvm_field_int(has_both, UVM_DEFAULT)
         `uvm_object_utils_end
 
         function new(string name = "axi_transaction");
             super.new(name);
+        endfunction
+
+        // ---------------------------------------------------------------
+        // Manual do_copy for queue fields (UVM 1.2 lacks uvm_field_queue_int)
+        // ---------------------------------------------------------------
+        function void do_copy(uvm_object rhs);
+            axi_transaction tx;
+            $cast(tx, rhs);
+            super.do_copy(rhs);
+            awid       = tx.awid;
+            awaddr     = tx.awaddr;
+            awlen      = tx.awlen;
+            awsize     = tx.awsize;
+            awburst    = tx.awburst;
+            awcache    = tx.awcache;
+            awprot     = tx.awprot;
+            awqos      = tx.awqos;
+            awlock     = tx.awlock;
+            arid       = tx.arid;
+            araddr     = tx.araddr;
+            arlen      = tx.arlen;
+            arsize     = tx.arsize;
+            arburst    = tx.arburst;
+            arcache    = tx.arcache;
+            arprot     = tx.arprot;
+            arqos      = tx.arqos;
+            arlock     = tx.arlock;
+            wdata_q    = tx.wdata_q;
+            wstrb_q    = tx.wstrb_q;
+            rdata_q    = tx.rdata_q;
+            rresp_q    = tx.rresp_q;
+            bresp      = tx.bresp;
+            is_write   = tx.is_write;
+            has_both   = tx.has_both;
+        endfunction
+
+        // ---------------------------------------------------------------
+        // Manual do_compare for queue fields
+        // ---------------------------------------------------------------
+        function bit do_compare(uvm_object rhs, uvm_comparer comparer);
+            axi_transaction tx;
+            bit result;
+            $cast(tx, rhs);
+            result = super.do_compare(rhs, comparer);
+            result &= comparer.compare_int("awid",       awid,       tx.awid);
+            result &= comparer.compare_int("awaddr",     awaddr,     tx.awaddr);
+            result &= comparer.compare_int("awlen",      awlen,      tx.awlen);
+            result &= comparer.compare_int("awsize",     awsize,     tx.awsize);
+            result &= comparer.compare_int("awburst",    awburst,    tx.awburst);
+            result &= comparer.compare_int("awcache",    awcache,    tx.awcache);
+            result &= comparer.compare_int("awprot",     awprot,     tx.awprot);
+            result &= comparer.compare_int("awqos",      awqos,      tx.awqos);
+            result &= comparer.compare_int("awlock",     awlock,     tx.awlock);
+            result &= comparer.compare_int("arid",       arid,       tx.arid);
+            result &= comparer.compare_int("araddr",     araddr,     tx.araddr);
+            result &= comparer.compare_int("arlen",      arlen,      tx.arlen);
+            result &= comparer.compare_int("arsize",     arsize,     tx.arsize);
+            result &= comparer.compare_int("arburst",    arburst,    tx.arburst);
+            result &= comparer.compare_int("arcache",    arcache,    tx.arcache);
+            result &= comparer.compare_int("arprot",     arprot,     tx.arprot);
+            result &= comparer.compare_int("arqos",      arqos,      tx.arqos);
+            result &= comparer.compare_int("arlock",     arlock,     tx.arlock);
+            result &= comparer.compare_queue_int("wdata_q", wdata_q, tx.wdata_q);
+            result &= comparer.compare_queue_int("wstrb_q", wstrb_q, tx.wstrb_q);
+            result &= comparer.compare_queue_int("rdata_q", rdata_q, tx.rdata_q);
+            result &= comparer.compare_queue_int("rresp_q", rresp_q, tx.rresp_q);
+            result &= comparer.compare_int("bresp",      bresp,      tx.bresp);
+            result &= comparer.compare_int("is_write",   is_write,   tx.is_write);
+            result &= comparer.compare_int("has_both",   has_both,   tx.has_both);
+            return result;
+        endfunction
+
+        // ---------------------------------------------------------------
+        // Manual do_print for queue fields
+        // ---------------------------------------------------------------
+        function void do_print(uvm_printer printer);
+            super.do_print(printer);
+            printer.print_field_int("awid",       awid,       $bits(awid));
+            printer.print_field_int("awaddr",     awaddr,     $bits(awaddr));
+            printer.print_field_int("awlen",      awlen,      $bits(awlen));
+            printer.print_field_int("awsize",     awsize,     $bits(awsize));
+            printer.print_field_int("awburst",    awburst,    $bits(awburst));
+            printer.print_field_int("awcache",    awcache,    $bits(awcache));
+            printer.print_field_int("awprot",     awprot,     $bits(awprot));
+            printer.print_field_int("awqos",      awqos,      $bits(awqos));
+            printer.print_field_int("awlock",     awlock,     $bits(awlock));
+            printer.print_field_int("arid",       arid,       $bits(arid));
+            printer.print_field_int("araddr",     araddr,     $bits(araddr));
+            printer.print_field_int("arlen",      arlen,      $bits(arlen));
+            printer.print_field_int("arsize",     arsize,     $bits(arsize));
+            printer.print_field_int("arburst",    arburst,    $bits(arburst));
+            printer.print_field_int("arcache",    arcache,    $bits(arcache));
+            printer.print_field_int("arprot",     arprot,     $bits(arprot));
+            printer.print_field_int("arqos",      arqos,      $bits(arqos));
+            printer.print_field_int("arlock",     arlock,     $bits(arlock));
+            printer.print_generic("wdata_q", "queue[$]", $sformatf("%0d entries", wdata_q.size()));
+            printer.print_generic("wstrb_q", "queue[$]", $sformatf("%0d entries", wstrb_q.size()));
+            printer.print_generic("rdata_q", "queue[$]", $sformatf("%0d entries", rdata_q.size()));
+            printer.print_generic("rresp_q", "queue[$]", $sformatf("%0d entries", rresp_q.size()));
+            printer.print_field_int("bresp",      bresp,      $bits(bresp));
+            printer.print_field_int("is_write",   is_write,   $bits(is_write));
+            printer.print_field_int("has_both",   has_both,   $bits(has_both));
         endfunction
 
     endclass : axi_transaction
