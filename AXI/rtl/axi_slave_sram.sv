@@ -97,12 +97,10 @@ module axi_slave_sram #(
             // Write data
             if (w_active && wvalid && wready) begin
                 automatic logic [$clog2(DEPTH)-1:0] word_addr;
-                automatic logic [ADDR_W-1:0] byte_addr;
-                automatic logic [DATA_W-1:0] old_data, new_data;
+                automatic logic [DATA_W-1:0] old_data;
 
                 // Calculate address for this beat
-                byte_addr = awaddr_latched + (w_beat << awsize_latched);
-                word_addr = byte_addr[$clog2(DEPTH)+$clog2(DATA_W/8)-1:$clog2(DATA_W/8)];
+                word_addr = get_word_addr(awaddr_latched, w_beat, awsize_latched, awburst_latched);
 
                 // Read-modify-write for narrow transfers via WSTRB
                 old_data = mem[word_addr];
@@ -161,15 +159,30 @@ module axi_slave_sram #(
     assign rresp  = 2'b00;
     assign rlast  = (r_beat == arlen_latched);
 
+    // Returns the word-aligned address for a given beat within a burst transaction.
+    // Supports FIXED (0): same address for every beat
+    //          INCR (1): base + beat << size
+    //          WRAP (2): wraps within (awlen+1)*2^size boundary
     function automatic logic [$clog2(DEPTH)-1:0] get_word_addr(
-        input logic [ADDR_W-1:0] base, input [7:0] beat, input [2:0] size
+        input logic [ADDR_W-1:0] base, input [7:0] beat, input [2:0] size, input [1:0] burst
     );
-        automatic logic [ADDR_W-1:0] byte_addr = base + (beat << size);
+        automatic logic [ADDR_W-1:0] byte_addr;
+        automatic logic [ADDR_W-1:0] wrap_boundary;
+        case (burst)
+            2'b00: byte_addr = base;                                      // FIXED
+            2'b01: byte_addr = base + (beat << size);                     // INCR
+            2'b10: begin                                                   // WRAP
+                wrap_boundary = (awlen_latched + 1) << size;
+                byte_addr = (base & ~(wrap_boundary - 1)) +
+                            ((base + (beat << size)) & (wrap_boundary - 1));
+            end
+            default: byte_addr = base + (beat << size);                   // INCR fallback
+        endcase
         return byte_addr[$clog2(DEPTH)+$clog2(DATA_W/8)-1:$clog2(DATA_W/8)];
     endfunction
 
     always_comb begin
-        rdata = mem[get_word_addr(araddr_latched, r_beat, arsize_latched)];
+        rdata = mem[get_word_addr(araddr_latched, r_beat, arsize_latched, arburst_latched)];
     end
 
     always_ff @(posedge aclk or negedge aresetn) begin
