@@ -1,6 +1,6 @@
 // AXI4-Full Master — Per-channel FSMs + transaction sequencer
 // 256-bit data, 8-bit ID, 32-bit address
-// Features: all burst types, narrow transfers, out-of-order ID support
+// Single-issue FSM (TB driver handles burst calc and re-ordering)
 
 module axi_master #(
     parameter int ID_W   = 8,
@@ -93,17 +93,17 @@ module axi_master #(
     output logic [1:0]           txn_bresp_out
 );
 
-    localparam FSM_IDLE     = 3'd0;
-    localparam FSM_AW_REQ   = 3'd1;
-    localparam FSM_AW_WAIT  = 3'd2;
-    localparam FSM_W_SEND   = 3'd3;
-    localparam FSM_B_WAIT   = 3'd4;
-    localparam FSM_AR_REQ   = 3'd5;
-    localparam FSM_AR_WAIT  = 3'd6;
-    localparam FSM_R_COLL   = 3'd7;
-    localparam FSM_DONE     = 3'd8;
+    localparam FSM_IDLE     = 4'd0;
+    localparam FSM_AW_REQ   = 4'd1;
+    localparam FSM_AW_WAIT  = 4'd2;
+    localparam FSM_W_SEND   = 4'd3;
+    localparam FSM_B_WAIT   = 4'd4;
+    localparam FSM_AR_REQ   = 4'd5;
+    localparam FSM_AR_WAIT  = 4'd6;
+    localparam FSM_R_COLL   = 4'd7;
+    localparam FSM_DONE     = 4'd8;
 
-    logic [2:0] state, next_state;
+    logic [3:0] state, next_state;
 
     // Latched transaction descriptor
     logic                 latched_is_write;
@@ -113,8 +113,8 @@ module axi_master #(
     logic [2:0]           latched_awsize, latched_arsize;
     logic [1:0]           latched_awburst, latched_arburst;
 
-    // Beat counters
-    logic [7:0]           w_beat_cnt, r_beat_cnt;
+    // Latched B response (held until txn_done is consumed)
+    logic [1:0]           latched_bresp;
 
     always_ff @(posedge aclk or negedge aresetn) begin
         if (!aresetn) begin
@@ -157,6 +157,7 @@ module axi_master #(
             latched_arlen    <= '0;
             latched_arsize   <= '0;
             latched_arburst  <= '0;
+            latched_bresp   <= 2'b00;
         end else if (state == FSM_IDLE && txn_req) begin
             latched_is_write <= txn_is_write;
             latched_awid     <= txn_awid;
@@ -169,6 +170,8 @@ module axi_master #(
             latched_arlen    <= txn_arlen;
             latched_arsize   <= txn_arsize;
             latched_arburst  <= txn_arburst;
+        end else if (state == FSM_B_WAIT && bvalid && bready) begin
+            latched_bresp <= bresp;
         end
     end
 
@@ -219,6 +222,6 @@ module axi_master #(
 
     // Completion
     assign txn_done     = (state == FSM_DONE);
-    assign txn_bresp_out = (state == FSM_B_WAIT) ? bresp : 2'b00;
+    assign txn_bresp_out = latched_bresp;
 
 endmodule : axi_master
