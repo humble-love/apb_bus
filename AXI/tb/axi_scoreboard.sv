@@ -30,6 +30,7 @@ class axi_scoreboard extends uvm_scoreboard;
     endfunction
 
     function void connect_phase(uvm_phase phase);
+        super.connect_phase(phase);
         m0_export.connect(m0_fifo.analysis_export);
         m1_export.connect(m1_fifo.analysis_export);
     endfunction
