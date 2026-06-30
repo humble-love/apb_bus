@@ -1,63 +1,46 @@
-// output_port.sv — Per-direction output port with credit tracking
+// output_port.sv — Single output port, single VC credit tracker
+// Instantiated per-VC for VCS 2018 compatibility
 module output_port #(
-  parameter int VC_NUM   = 2,
   parameter int VC_DEPTH = 8
 ) (
   input  logic        clk,
   input  logic        rst_n,
 
   // From crossbar
-  input  noc_flit_pkg::flit_t       xbar_flit_in,
+  input  noc_flit_pkg::flit_t        xbar_flit_in,
   input  logic        xbar_valid_in,
-  input  noc_config_pkg::vc_id_t    xbar_vc_in,
-  output logic        xbar_ready_out,
+  input  noc_config_pkg::vc_id_t     xbar_vc_in,
+  input  noc_config_pkg::vc_id_t     my_vc,      // this instance's VC ID
+  output logic        xbar_ready_out_vc,          // credit available for this VC
 
-  // Link output to downstream
-  output noc_flit_pkg::link_out_t   link_out,
+  // Link output to downstream (shared across VCs — driven by VC with credit)
+  output noc_flit_pkg::flit_t        link_flit_vc,
+  output logic        link_valid_vc,
 
   // Credit input from downstream
-  input  noc_flit_pkg::credit_t     credit_in,
+  input  logic        credit_in,
 
-  // Credit counters (for SA visibility)
-  output logic [$clog2(VC_DEPTH):0] credit_count [VC_NUM]
+  // Credit counter (for SA visibility)
+  output logic [$clog2(VC_DEPTH):0] credit_count
 );
   import noc_config_pkg::*;
   import noc_flit_pkg::*;
 
-  logic [$clog2(VC_DEPTH):0] credit_cnt [VC_NUM];
-
-  genvar v;
-  generate
-    for (v = 0; v < VC_NUM; v++) begin : vc_credit
-      always_ff @(posedge clk or negedge rst_n) begin
-        if (!rst_n) begin
-          credit_cnt[v] <= VC_DEPTH;
-        end else begin
-          if (xbar_valid_in && xbar_ready_out && xbar_vc_in == vc_id_t'(v))
-            credit_cnt[v] <= credit_cnt[v] - 1'b1;
-          if (credit_in[v])
-            credit_cnt[v] <= credit_cnt[v] + 1'b1;
-        end
-      end
-      assign credit_count[v] = credit_cnt[v];
-    end
-  endgenerate
-
-  assign xbar_ready_out = (credit_cnt[xbar_vc_in] > 0);
+  logic [$clog2(VC_DEPTH):0] cnt;
 
   always_ff @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
-      link_out.flit  <= '0;
-      link_out.valid <= 1'b0;
-      link_out.vc    <= '0;
+      cnt <= VC_DEPTH;
     end else begin
-      if (xbar_valid_in && xbar_ready_out) begin
-        link_out.flit  <= xbar_flit_in;
-        link_out.valid <= 1'b1;
-        link_out.vc    <= xbar_vc_in;
-      end else begin
-        link_out.valid <= 1'b0;
-      end
+      if (xbar_valid_in && xbar_vc_in == my_vc && cnt > 0)
+        cnt <= cnt - 1'b1;
+      if (credit_in)
+        cnt <= cnt + 1'b1;
     end
   end
+
+  assign credit_count = cnt;
+  assign xbar_ready_out_vc = (cnt > 0);
+  assign link_flit_vc  = xbar_flit_in;
+  assign link_valid_vc = xbar_valid_in && xbar_vc_in == my_vc;
 endmodule

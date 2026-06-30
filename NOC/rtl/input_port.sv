@@ -1,63 +1,56 @@
-// input_port.sv — Single input port with 2 VC FIFOs
+// input_port.sv — Single input port, single VC FIFO with credit return
+// Instantiated per-VC for VCS 2018 compatibility (avoids unpacked array-of-struct ports)
 module input_port #(
-  parameter int VC_NUM   = 2,
   parameter int VC_DEPTH = 8
 ) (
   input  logic        clk,
   input  logic        rst_n,
 
-  // Link input from upstream
-  input  noc_flit_pkg::link_in_t    link_in,
+  // Link input — this VC's slice
+  input  noc_flit_pkg::flit_t        link_flit,
+  input  logic        link_valid,
+  input  noc_config_pkg::vc_id_t     link_vc,
+  input  noc_config_pkg::vc_id_t     my_vc,     // this instance's VC ID
 
-  // Flit output toward crossbar (per VC)
-  output noc_flit_pkg::flit_t       vc_flit_out [VC_NUM],
-  output logic        vc_valid_out [VC_NUM],
-  input  logic        vc_pop       [VC_NUM],
+  // Flit output toward crossbar
+  output noc_flit_pkg::flit_t        vc_flit_out,
+  output logic        vc_valid_out,
+  input  logic        vc_pop,
 
   // Credit return to upstream
-  output noc_flit_pkg::credit_t     credit_out,
+  output logic        credit_out,
 
   // FIFO status
-  output logic        fifo_full  [VC_NUM],
-  output logic        fifo_empty [VC_NUM]
+  output logic        fifo_full,
+  output logic        fifo_empty
 );
   import noc_config_pkg::*;
   import noc_flit_pkg::*;
 
-  // VC FIFOs — register-based (small depth)
-  flit_t vc_fifo [VC_NUM][VC_DEPTH];
-  logic [$clog2(VC_DEPTH):0] fifo_wr_ptr [VC_NUM];
-  logic [$clog2(VC_DEPTH):0] fifo_rd_ptr [VC_NUM];
-  logic [$clog2(VC_DEPTH):0] fifo_count [VC_NUM];
+  flit_t mem [VC_DEPTH];
+  logic [$clog2(VC_DEPTH):0] wr_ptr, rd_ptr, count;
 
-  genvar v;
-  generate
-    for (v = 0; v < VC_NUM; v++) begin : vc_gen
-      // Write side: accept flit if matching VC, valid, and not full
-      // Read side: pop when granted
-      always_ff @(posedge clk or negedge rst_n) begin
-        if (!rst_n) begin
-          fifo_wr_ptr[v] <= '0;
-          fifo_rd_ptr[v] <= '0;
-          fifo_count[v]  <= '0;
-        end else begin
-          if (link_in.valid && link_in.vc == vc_id_t'(v) && fifo_count[v] < VC_DEPTH) begin
-            vc_fifo[v][fifo_wr_ptr[v]] <= link_in.flit;
-            fifo_wr_ptr[v] <= fifo_wr_ptr[v] + 1'b1;
-            fifo_count[v]  <= fifo_count[v] + 1'b1;
-          end
-          if (vc_pop[v] && fifo_count[v] > 0) begin
-            fifo_rd_ptr[v] <= fifo_rd_ptr[v] + 1'b1;
-            fifo_count[v]  <= fifo_count[v] - 1'b1;
-          end
-        end
+  always_ff @(posedge clk or negedge rst_n) begin
+    if (!rst_n) begin
+      wr_ptr <= '0;
+      rd_ptr <= '0;
+      count  <= '0;
+    end else begin
+      if (link_valid && link_vc == my_vc && count < VC_DEPTH) begin
+        mem[wr_ptr] <= link_flit;
+        wr_ptr <= wr_ptr + 1'b1;
+        count  <= count + 1'b1;
       end
-
-      assign vc_flit_out[v] = vc_fifo[v][fifo_rd_ptr[v]];
-      assign vc_valid_out[v] = (fifo_count[v] > 0);
-      assign fifo_full[v]    = (fifo_count[v] >= VC_DEPTH);
-      assign fifo_empty[v]   = (fifo_count[v] == 0);
-      assign credit_out[v]   = vc_pop[v];  // one credit per pop
+      if (vc_pop && count > 0) begin
+        rd_ptr <= rd_ptr + 1'b1;
+        count  <= count - 1'b1;
+      end
     end
-  endgenerate
+  end
+
+  assign vc_flit_out  = mem[rd_ptr];
+  assign vc_valid_out = (count > 0);
+  assign fifo_full    = (count >= VC_DEPTH);
+  assign fifo_empty   = (count == 0);
+  assign credit_out   = vc_pop;
 endmodule

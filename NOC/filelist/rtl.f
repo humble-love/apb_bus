@@ -4,3 +4,8 @@ rtl/noc_flit_pkg.sv
 rtl/route_compute.sv
 rtl/input_port.sv
 rtl/output_port.sv
+rtl/vc_allocator.sv
+rtl/switch_allocator.sv
+rtl/crossbar_5x5.sv
+rtl/link_ctrl.sv
+rtl/router_5port.sv
