@@ -9,3 +9,8 @@ rtl/switch_allocator.sv
 rtl/crossbar_5x5.sv
 rtl/link_ctrl.sv
 rtl/router_5port.sv
+rtl/ni_write_packer.sv
+rtl/ni_read_packer.sv
+rtl/ni_write_unpacker.sv
+rtl/ni_read_unpacker.sv
+rtl/ni_axi4.sv
