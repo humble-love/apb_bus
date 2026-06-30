@@ -14,3 +14,5 @@ rtl/ni_read_packer.sv
 rtl/ni_write_unpacker.sv
 rtl/ni_read_unpacker.sv
 rtl/ni_axi4.sv
+rtl/noc_tile.sv
+rtl/mesh_8x8.sv
