@@ -2,3 +2,5 @@
 rtl/noc_config_pkg.sv
 rtl/noc_flit_pkg.sv
 rtl/route_compute.sv
+rtl/input_port.sv
+rtl/output_port.sv
