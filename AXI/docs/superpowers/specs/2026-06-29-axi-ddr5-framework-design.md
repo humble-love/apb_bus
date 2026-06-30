@@ -283,22 +283,75 @@ tb_top
 
 ## Build & Run Flow
 
-### compile.sh
-```
-vcs -sverilog -ntb_opts uvm-1.2 \
-    -debug_access+all -kdb \
-    -P $VERDI_HOME/share/PLI/VCS/LINUX64/novas.tab \
-    $VERDI_HOME/share/PLI/VCS/LINUX64/pli.a \
-    -f scripts/filelist.f
+### Prerequisites
+
+- Synopsys VCS O-2018.09-SP2 or later
+- Synopsys Verdi (for waveform viewing)
+- UVM 1.2 (bundled with VCS)
+
+### Compile
+
+```bash
+cd AXI
+bash scripts/compile.sh
 ```
 
-### run.sh
-```
-./simv +UVM_TESTNAME=$TEST +fsdb+autoflush -cm line+cond+tgl
+This analyzes and elaborates all RTL + UVM files, generating `simv` in the project root.
+
+### Run a Single Test
+
+```bash
+bash scripts/run.sh <TEST_NAME>
 ```
 
-### Makefile targets
-- `make compile` — compile all sources
-- `make run TEST=<test>` — run simulation
-- `make verdi` — open Verdi with FSDB
-- `make clean` — remove build artifacts
+The `<TEST_NAME>` is a UVM test class name. Available tests:
+
+| Test Name | Description | Approx. Time |
+|-----------|-------------|--------------|
+| `axi_sanity_test` | Single write+read per slave, basic connectivity | 1.1 us |
+| `axi_random_test` | 20 random addr/data/len/size/burst transactions | 7.6 us |
+| `axi_burst_test` | INCR/WRAP burst reads and writes | 0.6 us |
+| `axi_narrow_test` | Narrow transfers (4B, 8B, 16B) on 256-bit bus | 0.4 us |
+| `axi_ooo_test` | Out-of-order reads with different IDs | 1.1 us |
+| `axi_concurrent_test` | Both masters active, crossbar stress test | 0.6 us |
+| `axi_error_test` | Unmapped address, verify DECERR response | 0.1 us |
+
+Example:
+
+```bash
+bash scripts/run.sh axi_sanity_test
+```
+
+### Run All Tests
+
+```bash
+for test in axi_sanity_test axi_random_test axi_burst_test \
+            axi_narrow_test axi_ooo_test axi_concurrent_test \
+            axi_error_test; do
+    bash scripts/run.sh "$test"
+done
+```
+
+### View Waveforms
+
+```bash
+bash scripts/verdi.sh
+```
+
+Opens Verdi with the FSDB waveform dumped during simulation.
+
+### Simulation Logs
+
+- `compile.log` — compilation output
+- `sim.log` — simulation output with UVM reports
+- `waves/` — FSDB waveform files
+
+### Check Results
+
+Each test prints `=== Simulation PASSED ===` or `=== Simulation FAILED ===` at the end. To grep for UVM error counts:
+
+```bash
+grep -E "UVM_ERROR|UVM_FATAL" sim.log
+```
+
+A passing test shows `UVM_ERROR :    0` and `UVM_FATAL :    0` in the report summary.
