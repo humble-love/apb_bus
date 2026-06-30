@@ -165,6 +165,11 @@ module axi_slave_dfi #(
                 q_rd_ptr <= q_rd_ptr + 1;
                 q_count  <= q_count - 1;
             end
+            // Beat counter increment (single driver for cmd_q fields)
+            if (state == FSM_RD_WAIT && dfi_rddata_valid)
+                cmd_q[q_rd_ptr].beat_cnt <= cmd_q[q_rd_ptr].beat_cnt + 1;
+            if (state == FSM_WR && wvalid && wready)
+                cmd_q[q_rd_ptr].beat_cnt <= cmd_q[q_rd_ptr].beat_cnt + 1;
         end
     end
 
@@ -246,7 +251,7 @@ module axi_slave_dfi #(
                 if (timer > 0) timer_next = timer - 1;
                 else if (dfi_rddata_valid) begin
                     // Data returned - handled in R channel logic
-                    if (cur_cmd.beat_cnt >= cur_cmd.len) begin
+                    if (cur_cmd.beat_cnt > cur_cmd.len) begin
                         next_state = FSM_PRE;
                         timer_next = tRP;
                     end else begin
@@ -270,7 +275,7 @@ module axi_slave_dfi #(
 
             FSM_WR_WAIT: begin
                 if (timer > 0) timer_next = timer - 1;
-                else if (cur_cmd.beat_cnt >= cur_cmd.len) begin
+                else if (cur_cmd.beat_cnt > cur_cmd.len) begin
                     next_state = FSM_PRE;
                     timer_next = tRP;
                 end else begin
@@ -314,14 +319,6 @@ module axi_slave_dfi #(
                 bank_open[cur_cmd.addr[15:14]] <= 1'b0;
             end
         end
-    end
-
-    // Beat counter increment
-    always_ff @(posedge aclk) begin
-        if (state == FSM_RD && dfi_rddata_valid)
-            cmd_q[q_rd_ptr].beat_cnt <= cur_cmd.beat_cnt + 1;
-        if (state == FSM_WR && wvalid && wready)
-            cmd_q[q_rd_ptr].beat_cnt <= cur_cmd.beat_cnt + 1;
     end
 
     // =============================================================

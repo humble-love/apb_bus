@@ -21,9 +21,13 @@ class axi_master_driver extends uvm_driver #(axi_transaction);
     endfunction
 
     task run_phase(uvm_phase phase);
+        `uvm_info("DRV", $sformatf("M%0d driver run_phase started", master_id), UVM_NONE)
         forever begin
             axi_transaction txn;
+            `uvm_info("DRV", $sformatf("M%0d waiting for item", master_id), UVM_NONE)
             seq_item_port.get_next_item(txn);
+            `uvm_info("DRV", $sformatf("M%0d got item is_write=%0d addr=0x%08h",
+                master_id, txn.is_write, txn.is_write ? txn.awaddr : txn.araddr), UVM_NONE)
 
             if (txn.is_write) begin
                 drive_aw(txn);
@@ -43,6 +47,7 @@ class axi_master_driver extends uvm_driver #(axi_transaction);
     endtask
 
     task drive_aw(axi_transaction txn);
+        `uvm_info("DRV", $sformatf("M%0d drive_aw addr=0x%08h", master_id, txn.awaddr), UVM_NONE)
         @(vif.drv_cb);
         vif.drv_cb.awid    <= txn.awid;
         vif.drv_cb.awaddr  <= txn.awaddr;
@@ -54,30 +59,43 @@ class axi_master_driver extends uvm_driver #(axi_transaction);
         vif.drv_cb.awprot  <= txn.awprot;
         vif.drv_cb.awqos   <= txn.awqos;
         vif.drv_cb.awvalid <= 1'b1;
+        `uvm_info("DRV", $sformatf("M%0d awvalid set, waiting for awready", master_id), UVM_NONE)
         @(vif.drv_cb);
-        while (!vif.drv_cb.awready)
+        while (!vif.drv_cb.awready) begin
+            `uvm_info("DRV", $sformatf("M%0d still waiting for awready (awready=%0d)",
+                master_id, vif.drv_cb.awready), UVM_NONE)
             @(vif.drv_cb);
+        end
+        `uvm_info("DRV", $sformatf("M%0d awready received", master_id), UVM_NONE)
         vif.drv_cb.awvalid <= 1'b0;
     endtask
 
     task drive_w_burst(axi_transaction txn);
+        `uvm_info("DRV", $sformatf("M%0d drive_w_burst len=%0d", master_id, txn.awlen), UVM_NONE)
         for (int i = 0; i <= txn.awlen; i++) begin
             @(vif.drv_cb);
             vif.drv_cb.wdata  <= txn.wdata_q[i];
             vif.drv_cb.wstrb  <= txn.wstrb_q[i];
             vif.drv_cb.wlast  <= (i == txn.awlen);
             vif.drv_cb.wvalid <= 1'b1;
+            `uvm_info("DRV", $sformatf("M%0d wvalid set, waiting wready (beat=%0d)", master_id, i), UVM_NONE)
             @(vif.drv_cb);
-            while (!vif.drv_cb.wready)
+            while (!vif.drv_cb.wready) begin
+                `uvm_info("DRV", $sformatf("M%0d still waiting wready=%0d", master_id, vif.drv_cb.wready), UVM_NONE)
                 @(vif.drv_cb);
+            end
+            `uvm_info("DRV", $sformatf("M%0d wready received (beat=%0d)", master_id, i), UVM_NONE)
         end
         vif.drv_cb.wvalid <= 1'b0;
+        `uvm_info("DRV", $sformatf("M%0d drive_w_burst done", master_id), UVM_NONE)
     endtask
 
     task wait_bresp(axi_transaction txn);
+        `uvm_info("DRV", $sformatf("M%0d waiting for bvalid", master_id), UVM_NONE)
         do begin
             @(vif.drv_cb);
         end while (!vif.drv_cb.bvalid);
+        `uvm_info("DRV", $sformatf("M%0d bvalid received bresp=%0d", master_id, vif.drv_cb.bresp), UVM_NONE)
         txn.bresp = vif.drv_cb.bresp;
         vif.drv_cb.bready <= 1'b1;
         @(vif.drv_cb);
@@ -85,6 +103,7 @@ class axi_master_driver extends uvm_driver #(axi_transaction);
     endtask
 
     task drive_ar(axi_transaction txn);
+        `uvm_info("DRV", $sformatf("M%0d drive_ar addr=0x%08h", master_id, txn.araddr), UVM_NONE)
         @(vif.drv_cb);
         vif.drv_cb.arid    <= txn.arid;
         vif.drv_cb.araddr  <= txn.araddr;
@@ -96,13 +115,18 @@ class axi_master_driver extends uvm_driver #(axi_transaction);
         vif.drv_cb.arprot  <= txn.arprot;
         vif.drv_cb.arqos   <= txn.arqos;
         vif.drv_cb.arvalid <= 1'b1;
+        `uvm_info("DRV", $sformatf("M%0d arvalid set, waiting arready", master_id), UVM_NONE)
         @(vif.drv_cb);
-        while (!vif.drv_cb.arready)
+        while (!vif.drv_cb.arready) begin
+            `uvm_info("DRV", $sformatf("M%0d still waiting arready=%0d", master_id, vif.drv_cb.arready), UVM_NONE)
             @(vif.drv_cb);
+        end
+        `uvm_info("DRV", $sformatf("M%0d arready received", master_id), UVM_NONE)
         vif.drv_cb.arvalid <= 1'b0;
     endtask
 
     task collect_r_burst(axi_transaction txn);
+        `uvm_info("DRV", $sformatf("M%0d collect_r_burst len=%0d", master_id, txn.arlen), UVM_NONE)
         txn.rdata_q.delete();
         txn.rresp_q.delete();
         for (int i = 0; i <= txn.arlen; i++) begin
@@ -112,9 +136,11 @@ class axi_master_driver extends uvm_driver #(axi_transaction);
             txn.rdata_q.push_back(vif.drv_cb.rdata);
             txn.rresp_q.push_back(vif.drv_cb.rresp);
             vif.drv_cb.rready <= 1'b1;
+            `uvm_info("DRV", $sformatf("M%0d rbeat received (i=%0d)", master_id, i), UVM_NONE)
             @(vif.drv_cb);
             vif.drv_cb.rready <= 1'b0;
         end
+        `uvm_info("DRV", $sformatf("M%0d collect_r_burst done", master_id), UVM_NONE)
     endtask
 
 endclass : axi_master_driver

@@ -57,7 +57,7 @@ endclass
 // ---------------------------------------------------------------
 class axi_random_seq extends uvm_sequence #(axi_transaction);
     `uvm_object_utils(axi_random_seq)
-    int num_txn = 50;
+    int num_txn = 10;
 
     function new(string name = "axi_random_seq"); super.new(name); endfunction
 

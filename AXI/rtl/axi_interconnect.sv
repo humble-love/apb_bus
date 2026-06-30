@@ -150,11 +150,12 @@ module axi_interconnect #(
                 assign x_awburst[mi][si] = m_awburst[mi];
                 assign x_awvalid[mi][si] = m_awvalid[mi] && m_aw_sel[mi][si];
 
-                // W
+                // W: no decoder gating — awvalid is deasserted after AW handshake
+                // while W data is still flowing. Crossbar w_locked handles routing.
                 assign x_wdata[mi][si]  = m_wdata[mi];
                 assign x_wstrb[mi][si]  = m_wstrb[mi];
                 assign x_wlast[mi][si]  = m_wlast[mi];
-                assign x_wvalid[mi][si] = m_wvalid[mi] && m_aw_sel[mi][si];
+                assign x_wvalid[mi][si] = m_wvalid[mi];
 
                 // AR
                 assign x_arid[mi][si]   = m_arid[mi];
@@ -167,49 +168,167 @@ module axi_interconnect #(
         end
     endgenerate
 
-    // ============================================================
-    // Write Crossbar
-    // ============================================================
-    axi_crossbar_wr #(.NUM_MASTERS(NUM_MASTERS), .NUM_SLAVES(NUM_SLAVES),
-                      .ID_W(ID_W), .ADDR_W(ADDR_W), .DATA_W(DATA_W))
-    u_crossbar_wr (
-        .aclk, .aresetn,
-        .m_awid   (x_awid),   .m_awaddr  (x_awaddr),  .m_awlen (x_awlen),
-        .m_awsize (x_awsize), .m_awburst (x_awburst), .m_awvalid(x_awvalid),
-        .m_awready(x_awready),
-        .m_wdata  (x_wdata),  .m_wstrb   (x_wstrb),   .m_wlast (x_wlast),
-        .m_wvalid (x_wvalid), .m_wready  (x_wready),
-        .m_bid    (m_bid),    .m_bresp   (m_bresp),   .m_bvalid(m_bvalid),
-        .m_bready (m_bready),
-        .s_awid   (s_awid),   .s_awaddr  (s_awaddr),  .s_awlen (s_awlen),
-        .s_awsize (s_awsize), .s_awburst (s_awburst), .s_awvalid(s_awvalid),
-        .s_awready(s_awready),
-        .s_wdata  (s_wdata),  .s_wstrb   (s_wstrb),   .s_wlast (s_wlast),
-        .s_wvalid (s_wvalid), .s_wready  (s_wready),
-        .s_bid    (s_bid),    .s_bresp   (s_bresp),   .s_bvalid(s_bvalid),
-        .s_bready (s_bready)
-    );
+    // Per-slave B/R channel outputs from crossbars
+    logic [NUM_SLAVES-1:0][NUM_MASTERS-1:0][ID_W-1:0]   x_bid;
+    logic [NUM_SLAVES-1:0][NUM_MASTERS-1:0][1:0]        x_bresp;
+    logic [NUM_SLAVES-1:0][NUM_MASTERS-1:0]             x_bvalid;
+    logic [NUM_SLAVES-1:0][NUM_MASTERS-1:0]             x_bready;
+
+    logic [NUM_SLAVES-1:0][NUM_MASTERS-1:0][ID_W-1:0]   x_rid;
+    logic [NUM_SLAVES-1:0][NUM_MASTERS-1:0][DATA_W-1:0] x_rdata;
+    logic [NUM_SLAVES-1:0][NUM_MASTERS-1:0][1:0]        x_rresp;
+    logic [NUM_SLAVES-1:0][NUM_MASTERS-1:0]             x_rlast;
+    logic [NUM_SLAVES-1:0][NUM_MASTERS-1:0]             x_rvalid;
+    logic [NUM_SLAVES-1:0][NUM_MASTERS-1:0]             x_rready;
 
     // ============================================================
-    // Read Crossbar
+    // Per-slave Write Crossbars (NUM_SLAVES=1 each)
     // ============================================================
-    axi_crossbar_rd #(.NUM_MASTERS(NUM_MASTERS), .NUM_SLAVES(NUM_SLAVES),
-                      .ID_W(ID_W), .ADDR_W(ADDR_W), .DATA_W(DATA_W))
-    u_crossbar_rd (
-        .aclk, .aresetn,
-        .m_arid   (x_arid),   .m_araddr  (x_araddr),  .m_arlen (x_arlen),
-        .m_arsize (x_arsize), .m_arburst (x_arburst), .m_arvalid(x_arvalid),
-        .m_arready(x_arready),
-        .m_rid    (m_rid),    .m_rdata   (m_rdata),   .m_rresp (m_rresp),
-        .m_rlast  (m_rlast),  .m_rvalid  (m_rvalid),  .m_rready(m_rready),
-        .s_arid   (s_arid),   .s_araddr  (s_araddr),  .s_arlen (s_arlen),
-        .s_arsize (s_arsize), .s_arburst (s_arburst), .s_arvalid(s_arvalid),
-        .s_arready(s_arready),
-        .s_rid    (s_rid),    .s_rdata   (s_rdata),   .s_rresp (s_rresp),
-        .s_rlast  (s_rlast),  .s_rvalid  (s_rvalid),  .s_rready(s_rready)
-    );
+    generate
+        for (si = 0; si < NUM_SLAVES; si = si + 1) begin : s_wr_xbar
+            // Extract [M] signals from [M][S] for this slave
+            logic [NUM_MASTERS-1:0][ID_W-1:0]   si_awid;
+            logic [NUM_MASTERS-1:0][ADDR_W-1:0] si_awaddr;
+            logic [NUM_MASTERS-1:0][7:0]        si_awlen;
+            logic [NUM_MASTERS-1:0][2:0]        si_awsize;
+            logic [NUM_MASTERS-1:0][1:0]        si_awburst;
+            logic [NUM_MASTERS-1:0]             si_awvalid;
+            logic [NUM_MASTERS-1:0]             si_awready;
+            logic [NUM_MASTERS-1:0][DATA_W-1:0]   si_wdata;
+            logic [NUM_MASTERS-1:0][DATA_W/8-1:0] si_wstrb;
+            logic [NUM_MASTERS-1:0]               si_wlast;
+            logic [NUM_MASTERS-1:0]               si_wvalid;
+            logic [NUM_MASTERS-1:0]               si_wready;
 
-    // Master AW/AR ready: route from crossbar with decoder gating
+            for (mi = 0; mi < NUM_MASTERS; mi = mi + 1) begin : m_map
+                assign si_awid[mi]   = x_awid[mi][si];
+                assign si_awaddr[mi] = x_awaddr[mi][si];
+                assign si_awlen[mi]  = x_awlen[mi][si];
+                assign si_awsize[mi] = x_awsize[mi][si];
+                assign si_awburst[mi]= x_awburst[mi][si];
+                assign si_awvalid[mi]= x_awvalid[mi][si];
+                assign x_awready[mi][si] = si_awready[mi];
+                assign si_wdata[mi]  = x_wdata[mi][si];
+                assign si_wstrb[mi]  = x_wstrb[mi][si];
+                assign si_wlast[mi]  = x_wlast[mi][si];
+                assign si_wvalid[mi] = x_wvalid[mi][si];
+                assign x_wready[mi][si] = si_wready[mi];
+            end
+
+            axi_crossbar_wr #(
+                .NUM_MASTERS(NUM_MASTERS), .NUM_SLAVES(1),
+                .ID_W(ID_W), .ADDR_W(ADDR_W), .DATA_W(DATA_W)
+            ) u_wr (
+                .aclk, .aresetn,
+                .m_awid(si_awid), .m_awaddr(si_awaddr), .m_awlen(si_awlen),
+                .m_awsize(si_awsize), .m_awburst(si_awburst),
+                .m_awvalid(si_awvalid), .m_awready(si_awready),
+                .m_wdata(si_wdata), .m_wstrb(si_wstrb), .m_wlast(si_wlast),
+                .m_wvalid(si_wvalid), .m_wready(si_wready),
+                .m_bid(x_bid[si]), .m_bresp(x_bresp[si]),
+                .m_bvalid(x_bvalid[si]), .m_bready(x_bready[si]),
+                .s_awid(s_awid[si]), .s_awaddr(s_awaddr[si]),
+                .s_awlen(s_awlen[si]), .s_awsize(s_awsize[si]),
+                .s_awburst(s_awburst[si]), .s_awvalid(s_awvalid[si]),
+                .s_awready(s_awready[si]),
+                .s_wdata(s_wdata[si]), .s_wstrb(s_wstrb[si]),
+                .s_wlast(s_wlast[si]), .s_wvalid(s_wvalid[si]),
+                .s_wready(s_wready[si]),
+                .s_bid(s_bid[si]), .s_bresp(s_bresp[si]),
+                .s_bvalid(s_bvalid[si]), .s_bready(s_bready[si])
+            );
+        end
+    endgenerate
+
+    // ============================================================
+    // Per-slave Read Crossbars (NUM_SLAVES=1 each)
+    // ============================================================
+    generate
+        for (si = 0; si < NUM_SLAVES; si = si + 1) begin : s_rd_xbar
+            logic [NUM_MASTERS-1:0][ID_W-1:0]   si_arid;
+            logic [NUM_MASTERS-1:0][ADDR_W-1:0] si_araddr;
+            logic [NUM_MASTERS-1:0][7:0]        si_arlen;
+            logic [NUM_MASTERS-1:0][2:0]        si_arsize;
+            logic [NUM_MASTERS-1:0][1:0]        si_arburst;
+            logic [NUM_MASTERS-1:0]             si_arvalid;
+            logic [NUM_MASTERS-1:0]             si_arready;
+
+            for (mi = 0; mi < NUM_MASTERS; mi = mi + 1) begin : m_map
+                assign si_arid[mi]    = x_arid[mi][si];
+                assign si_araddr[mi]  = x_araddr[mi][si];
+                assign si_arlen[mi]   = x_arlen[mi][si];
+                assign si_arsize[mi]  = x_arsize[mi][si];
+                assign si_arburst[mi] = x_arburst[mi][si];
+                assign si_arvalid[mi] = x_arvalid[mi][si];
+                assign x_arready[mi][si] = si_arready[mi];
+            end
+
+            axi_crossbar_rd #(
+                .NUM_MASTERS(NUM_MASTERS), .NUM_SLAVES(1),
+                .ID_W(ID_W), .ADDR_W(ADDR_W), .DATA_W(DATA_W)
+            ) u_rd (
+                .aclk, .aresetn,
+                .m_arid(si_arid), .m_araddr(si_araddr), .m_arlen(si_arlen),
+                .m_arsize(si_arsize), .m_arburst(si_arburst),
+                .m_arvalid(si_arvalid), .m_arready(si_arready),
+                .m_rid(x_rid[si]), .m_rdata(x_rdata[si]),
+                .m_rresp(x_rresp[si]), .m_rlast(x_rlast[si]),
+                .m_rvalid(x_rvalid[si]), .m_rready(x_rready[si]),
+                .s_arid(s_arid[si]), .s_araddr(s_araddr[si]),
+                .s_arlen(s_arlen[si]), .s_arsize(s_arsize[si]),
+                .s_arburst(s_arburst[si]), .s_arvalid(s_arvalid[si]),
+                .s_arready(s_arready[si]),
+                .s_rid(s_rid[si]), .s_rdata(s_rdata[si]),
+                .s_rresp(s_rresp[si]), .s_rlast(s_rlast[si]),
+                .s_rvalid(s_rvalid[si]), .s_rready(s_rready[si])
+            );
+        end
+    endgenerate
+
+    // ============================================================
+    // Merge per-slave B/R channels → flat [M] outputs
+    // ============================================================
+    always_comb begin
+        for (int mi = 0; mi < NUM_MASTERS; mi = mi + 1) begin
+            m_bid[mi]   = '0;
+            m_bresp[mi] = '0;
+            m_bvalid[mi] = 1'b0;
+            m_rid[mi]   = '0;
+            m_rdata[mi] = '0;
+            m_rresp[mi] = '0;
+            m_rlast[mi] = 1'b0;
+            m_rvalid[mi] = 1'b0;
+        end
+        for (int si = 0; si < NUM_SLAVES; si = si + 1) begin
+            for (int mi = 0; mi < NUM_MASTERS; mi = mi + 1) begin
+                if (x_bvalid[si][mi]) begin
+                    m_bid[mi]   = x_bid[si][mi];
+                    m_bresp[mi] = x_bresp[si][mi];
+                    m_bvalid[mi] = 1'b1;
+                end
+                if (x_rvalid[si][mi]) begin
+                    m_rid[mi]   = x_rid[si][mi];
+                    m_rdata[mi] = x_rdata[si][mi];
+                    m_rresp[mi] = x_rresp[si][mi];
+                    m_rlast[mi] = x_rlast[si][mi];
+                    m_rvalid[mi] = 1'b1;
+                end
+            end
+        end
+    end
+
+    // B/R ready: fan out from master to per-slave crossbar
+    always_comb begin
+        for (int si = 0; si < NUM_SLAVES; si = si + 1)
+            for (int mi = 0; mi < NUM_MASTERS; mi = mi + 1) begin
+                x_bready[si][mi] = m_bready[mi];
+                x_rready[si][mi] = m_rready[mi];
+            end
+    end
+
+    // ============================================================
+    // Master AW/AR/W ready: route from per-slave crossbar with decoder gating
+    // ============================================================
     generate
         for (mi = 0; mi < NUM_MASTERS; mi = mi + 1) begin : m_rdy
             logic aw_rdy, ar_rdy;
@@ -224,14 +343,9 @@ module axi_interconnect #(
             assign m_awready[mi] = aw_rdy;
             assign m_arready[mi] = ar_rdy;
 
-            // W ready
-            logic w_rdy;
-            always_comb begin
-                w_rdy = 1'b0;
-                for (int si = 0; si < NUM_SLAVES; si++)
-                    if (m_aw_sel[mi][si]) w_rdy = x_wready[mi][si];
-            end
-            assign m_wready[mi] = w_rdy;
+            // W ready: OR across all slave crossbars (no decoder gating).
+            // Only the crossbar with w_locked asserts wready.
+            assign m_wready[mi] = |x_wready[mi];
         end
     endgenerate
 

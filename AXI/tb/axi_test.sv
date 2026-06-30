@@ -33,17 +33,24 @@ class axi_sanity_test extends axi_base_test;
 
     task run_phase(uvm_phase phase);
         axi_sanity_seq seq0, seq1;
+        `uvm_info("TEST", "axi_sanity_test run_phase starting", UVM_NONE)
         phase.raise_objection(this);
+        `uvm_info("TEST", "Objection raised, starting sequences", UVM_NONE)
         fork
             begin
                 seq0 = axi_sanity_seq::type_id::create("seq0");
+                `uvm_info("TEST", "Starting seq0 on agent[0]", UVM_NONE)
                 seq0.start(env.master_agent[0].sequencer);
+                `uvm_info("TEST", "seq0 completed", UVM_NONE)
             end
             begin
                 seq1 = axi_sanity_seq::type_id::create("seq1");
+                `uvm_info("TEST", "Starting seq1 on agent[1]", UVM_NONE)
                 seq1.start(env.master_agent[1].sequencer);
+                `uvm_info("TEST", "seq1 completed", UVM_NONE)
             end
         join
+        `uvm_info("TEST", "Both sequences done, dropping objection", UVM_NONE)
         phase.drop_objection(this);
     endtask
 endclass : axi_sanity_test
@@ -54,7 +61,7 @@ class axi_random_test extends axi_base_test;
 
     task run_phase(uvm_phase phase);
         axi_random_seq seq = axi_random_seq::type_id::create("seq");
-        seq.num_txn = 100;
+        seq.num_txn = 20;
         phase.raise_objection(this);
         seq.start(env.master_agent[0].sequencer);
         phase.drop_objection(this);

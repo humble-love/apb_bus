@@ -117,18 +117,18 @@ module axi_crossbar_rd #(
             always_ff @(posedge aclk or negedge aresetn) begin
                 if (!aresetn) begin
                     for (int i = 0; i < LUT_DEPTH; i = i + 1) begin
-                        id_lut_valid[si][i]  <= 1'b0;
-                        id_lut_master[si][i] <= '0;
+                        id_lut_valid[i][si]  <= 1'b0;
+                        id_lut_master[i][si] <= '0;
                     end
                 end else begin
                     // Write on AR handshake
                     if (ar_owner_valid[si] && s_arvalid[si] && s_arready[si]) begin
-                        id_lut_valid[si][m_arid[ar_owner[si]]]  <= 1'b1;
-                        id_lut_master[si][m_arid[ar_owner[si]]] <= ar_owner[si];
+                        id_lut_valid[m_arid[ar_owner[si]]][si]  <= 1'b1;
+                        id_lut_master[m_arid[ar_owner[si]]][si] <= ar_owner[si];
                     end
                     // Clear on R last beat handshake
                     if (s_rvalid[si] && s_rready[si] && s_rlast[si]) begin
-                        id_lut_valid[si][s_rid[si]] <= 1'b0;
+                        id_lut_valid[s_rid[si]][si] <= 1'b0;
                     end
                 end
             end
@@ -167,8 +167,8 @@ module axi_crossbar_rd #(
         end
         for (int si = 0; si < NUM_SLAVES; si = si + 1) begin
             if (s_rvalid[si]) begin
-                automatic int r_master = id_lut_master[si][s_rid[si]];
-                if (id_lut_valid[si][s_rid[si]]) begin
+                automatic int r_master = id_lut_master[s_rid[si]][si];
+                if (id_lut_valid[s_rid[si]][si]) begin
                     m_rid[r_master]    = s_rid[si];
                     m_rdata[r_master]  = s_rdata[si];
                     m_rresp[r_master]  = s_rresp[si];
@@ -185,8 +185,8 @@ module axi_crossbar_rd #(
     always_comb begin
         s_rready = '0;
         for (int si = 0; si < NUM_SLAVES; si = si + 1) begin
-            if (s_rvalid[si] && id_lut_valid[si][s_rid[si]])
-                s_rready[si] = m_rready[id_lut_master[si][s_rid[si]]];
+            if (s_rvalid[si] && id_lut_valid[s_rid[si]][si])
+                s_rready[si] = m_rready[id_lut_master[s_rid[si]][si]];
         end
     end
 

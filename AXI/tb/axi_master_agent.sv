@@ -27,7 +27,7 @@ class axi_master_agent extends uvm_agent;
         super.connect_phase(phase);
         driver.seq_item_port.connect(sequencer.seq_item_export);
         driver.master_id = master_id;
-        monitor.ap.connect(null);  // Connected in env
+        // monitor.ap is connected in env.connect_phase
     endfunction
 
 endclass : axi_master_agent

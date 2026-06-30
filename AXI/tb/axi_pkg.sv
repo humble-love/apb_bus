@@ -147,6 +147,9 @@ package axi_pkg;
             if (is_write) {
                 wdata_q.size() == awlen + 1;
                 wstrb_q.size() == awlen + 1;
+            } else {
+                wdata_q.size() == 0;
+                wstrb_q.size() == 0;
             }
         }
 
@@ -218,38 +221,38 @@ package axi_pkg;
         endfunction
 
         // ---------------------------------------------------------------
-        // Manual do_compare for queue fields
+        // Manual do_compare — uses compare_field_int (UVM 1.2 compat)
         // ---------------------------------------------------------------
         function bit do_compare(uvm_object rhs, uvm_comparer comparer);
             axi_transaction tx;
             bit result;
             $cast(tx, rhs);
             result = super.do_compare(rhs, comparer);
-            result &= comparer.compare_int("awid",       awid,       tx.awid);
-            result &= comparer.compare_int("awaddr",     awaddr,     tx.awaddr);
-            result &= comparer.compare_int("awlen",      awlen,      tx.awlen);
-            result &= comparer.compare_int("awsize",     awsize,     tx.awsize);
-            result &= comparer.compare_int("awburst",    awburst,    tx.awburst);
-            result &= comparer.compare_int("awcache",    awcache,    tx.awcache);
-            result &= comparer.compare_int("awprot",     awprot,     tx.awprot);
-            result &= comparer.compare_int("awqos",      awqos,      tx.awqos);
-            result &= comparer.compare_int("awlock",     awlock,     tx.awlock);
-            result &= comparer.compare_int("arid",       arid,       tx.arid);
-            result &= comparer.compare_int("araddr",     araddr,     tx.araddr);
-            result &= comparer.compare_int("arlen",      arlen,      tx.arlen);
-            result &= comparer.compare_int("arsize",     arsize,     tx.arsize);
-            result &= comparer.compare_int("arburst",    arburst,    tx.arburst);
-            result &= comparer.compare_int("arcache",    arcache,    tx.arcache);
-            result &= comparer.compare_int("arprot",     arprot,     tx.arprot);
-            result &= comparer.compare_int("arqos",      arqos,      tx.arqos);
-            result &= comparer.compare_int("arlock",     arlock,     tx.arlock);
-            result &= comparer.compare_queue_int("wdata_q", wdata_q, tx.wdata_q);
-            result &= comparer.compare_queue_int("wstrb_q", wstrb_q, tx.wstrb_q);
-            result &= comparer.compare_queue_int("rdata_q", rdata_q, tx.rdata_q);
-            result &= comparer.compare_queue_int("rresp_q", rresp_q, tx.rresp_q);
-            result &= comparer.compare_int("bresp",      bresp,      tx.bresp);
-            result &= comparer.compare_int("is_write",   is_write,   tx.is_write);
-            result &= comparer.compare_int("has_both",   has_both,   tx.has_both);
+            result &= comparer.compare_field_int("awid",    awid,    tx.awid,    $bits(awid));
+            result &= comparer.compare_field_int("awaddr",  awaddr,  tx.awaddr,  $bits(awaddr));
+            result &= comparer.compare_field_int("awlen",   awlen,   tx.awlen,   $bits(awlen));
+            result &= comparer.compare_field_int("awsize",  awsize,  tx.awsize,  $bits(awsize));
+            result &= comparer.compare_field_int("awburst", awburst, tx.awburst, $bits(awburst));
+            result &= comparer.compare_field_int("awcache", awcache, tx.awcache, $bits(awcache));
+            result &= comparer.compare_field_int("awprot",  awprot,  tx.awprot,  $bits(awprot));
+            result &= comparer.compare_field_int("awqos",   awqos,   tx.awqos,   $bits(awqos));
+            result &= comparer.compare_field_int("awlock",  awlock,  tx.awlock,  $bits(awlock));
+            result &= comparer.compare_field_int("arid",    arid,    tx.arid,    $bits(arid));
+            result &= comparer.compare_field_int("araddr",  araddr,  tx.araddr,  $bits(araddr));
+            result &= comparer.compare_field_int("arlen",   arlen,   tx.arlen,   $bits(arlen));
+            result &= comparer.compare_field_int("arsize",  arsize,  tx.arsize,  $bits(arsize));
+            result &= comparer.compare_field_int("arburst", arburst, tx.arburst, $bits(arburst));
+            result &= comparer.compare_field_int("arcache", arcache, tx.arcache, $bits(arcache));
+            result &= comparer.compare_field_int("arprot",  arprot,  tx.arprot,  $bits(arprot));
+            result &= comparer.compare_field_int("arqos",   arqos,   tx.arqos,   $bits(arqos));
+            result &= comparer.compare_field_int("arlock",  arlock,  tx.arlock,  $bits(arlock));
+            result &= (wdata_q === tx.wdata_q);
+            result &= (wstrb_q === tx.wstrb_q);
+            result &= (rdata_q === tx.rdata_q);
+            result &= (rresp_q === tx.rresp_q);
+            result &= comparer.compare_field_int("bresp",   bresp,   tx.bresp,   $bits(bresp));
+            result &= comparer.compare_field_int("is_write", is_write, tx.is_write, $bits(is_write));
+            result &= comparer.compare_field_int("has_both", has_both, tx.has_both, $bits(has_both));
             return result;
         endfunction
 
@@ -276,10 +279,10 @@ package axi_pkg;
             printer.print_field_int("arprot",     arprot,     $bits(arprot));
             printer.print_field_int("arqos",      arqos,      $bits(arqos));
             printer.print_field_int("arlock",     arlock,     $bits(arlock));
-            printer.print_generic("wdata_q", "queue[$]", $sformatf("%0d entries", wdata_q.size()));
-            printer.print_generic("wstrb_q", "queue[$]", $sformatf("%0d entries", wstrb_q.size()));
-            printer.print_generic("rdata_q", "queue[$]", $sformatf("%0d entries", rdata_q.size()));
-            printer.print_generic("rresp_q", "queue[$]", $sformatf("%0d entries", rresp_q.size()));
+            printer.print_generic("wdata_q", "queue[$]", 0, $sformatf("%0d entries", wdata_q.size()));
+            printer.print_generic("wstrb_q", "queue[$]", 0, $sformatf("%0d entries", wstrb_q.size()));
+            printer.print_generic("rdata_q", "queue[$]", 0, $sformatf("%0d entries", rdata_q.size()));
+            printer.print_generic("rresp_q", "queue[$]", 0, $sformatf("%0d entries", rresp_q.size()));
             printer.print_field_int("bresp",      bresp,      $bits(bresp));
             printer.print_field_int("is_write",   is_write,   $bits(is_write));
             printer.print_field_int("has_both",   has_both,   $bits(has_both));

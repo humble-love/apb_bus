@@ -100,7 +100,7 @@ module axi_slave_sram #(
                 automatic logic [DATA_W-1:0] old_data;
 
                 // Calculate address for this beat
-                word_addr = get_word_addr(awaddr_latched, w_beat, awsize_latched, awburst_latched);
+                word_addr = get_word_addr(awaddr_latched, w_beat, awsize_latched, awburst_latched, awlen_latched);
 
                 // Read-modify-write for narrow transfers via WSTRB
                 old_data = mem[word_addr];
@@ -150,6 +150,9 @@ module axi_slave_sram #(
             end
             if (r_active && rvalid && rready && rlast)
                 r_active <= 1'b0;
+            // r_beat increment (merged from separate always_ff)
+            if (r_active && rvalid && rready && (r_beat < arlen_latched))
+                r_beat <= r_beat + 1;
         end
     end
 
@@ -164,7 +167,11 @@ module axi_slave_sram #(
     //          INCR (1): base + beat << size
     //          WRAP (2): wraps within (awlen+1)*2^size boundary
     function automatic logic [$clog2(DEPTH)-1:0] get_word_addr(
-        input logic [ADDR_W-1:0] base, input [7:0] beat, input [2:0] size, input [1:0] burst
+        input logic [ADDR_W-1:0] base,
+        input [7:0] beat,
+        input [2:0] size,
+        input [1:0] burst,
+        input [7:0] len
     );
         automatic logic [ADDR_W-1:0] byte_addr;
         automatic logic [ADDR_W-1:0] wrap_boundary;
@@ -172,7 +179,7 @@ module axi_slave_sram #(
             2'b00: byte_addr = base;                                      // FIXED
             2'b01: byte_addr = base + (beat << size);                     // INCR
             2'b10: begin                                                   // WRAP
-                wrap_boundary = (awlen_latched + 1) << size;
+                wrap_boundary = (len + 1) << size;
                 byte_addr = (base & ~(wrap_boundary - 1)) +
                             ((base + (beat << size)) & (wrap_boundary - 1));
             end
@@ -182,19 +189,7 @@ module axi_slave_sram #(
     endfunction
 
     always_comb begin
-        rdata = mem[get_word_addr(araddr_latched, r_beat, arsize_latched, arburst_latched)];
-    end
-
-    always_ff @(posedge aclk or negedge aresetn) begin
-        if (!aresetn) begin
-            // handled above
-        end else begin
-            if (r_active && rvalid && rready) begin
-                if (r_beat < arlen_latched)
-                    r_beat <= r_beat + 1;
-                // On rlast, r_active cleared above — r_beat not incremented further
-            end
-        end
+        rdata = mem[get_word_addr(araddr_latched, r_beat, arsize_latched, arburst_latched, arlen_latched)];
     end
 
 endmodule : axi_slave_sram

@@ -131,7 +131,10 @@ module axi_crossbar_wr #(
                         w_locked[si] <= 1'b1;
                         w_owner[si]  <= aw_owner[si];
                     end
-                    if (w_locked[si] && s_wvalid[si] && s_wready[si] && s_wlast[si]) begin
+                    // Release lock when B handshake completes.
+                    // Must NOT clear on W last beat: B response arrives one cycle
+                    // later and B routing also depends on w_locked.
+                    if (w_locked[si] && s_bvalid[si] && s_bready[si]) begin
                         w_locked[si] <= 1'b0;
                     end
                 end
