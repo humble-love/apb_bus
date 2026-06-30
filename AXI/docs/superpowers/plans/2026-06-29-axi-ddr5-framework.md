@@ -1,6 +1,6 @@
 # AXI4-Full + DDR5 DFI Bridge Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Build an industrial-grade AXI4-Full bus system with crossbar interconnect, SRAM slave, DDR5 DFI bridge slave, and full UVM verification.
 
@@ -34,14 +34,14 @@
 **Interfaces:**
 - Produces: Build scripts consumed by all later tasks for compile verification
 
-- [ ] **Step 1: Create scripts directory**
+- [x] **Step 1: Create scripts directory**
 
 ```bash
 mkdir -p /home/openclaw/project/bus/AXI/scripts
 mkdir -p /home/openclaw/project/bus/AXI/waves
 ```
 
-- [ ] **Step 2: Write .gitignore**
+- [x] **Step 2: Write .gitignore**
 
 File: `AXI/.gitignore`
 ```
@@ -70,7 +70,7 @@ build2/
 *.so
 ```
 
-- [ ] **Step 3: Write compile.sh**
+- [x] **Step 3: Write compile.sh**
 
 File: `AXI/scripts/compile.sh`
 ```bash
@@ -98,7 +98,7 @@ else
 fi
 ```
 
-- [ ] **Step 4: Write run.sh**
+- [x] **Step 4: Write run.sh**
 
 File: `AXI/scripts/run.sh`
 ```bash
@@ -122,7 +122,7 @@ else
 fi
 ```
 
-- [ ] **Step 5: Write verdi.sh**
+- [x] **Step 5: Write verdi.sh**
 
 File: `AXI/scripts/verdi.sh`
 ```bash
@@ -133,7 +133,7 @@ cd "$PROJ_ROOT"
 verdi -sv -f scripts/filelist.f -ssf waves/*.fsdb &
 ```
 
-- [ ] **Step 6: Write filelist.f**
+- [x] **Step 6: Write filelist.f**
 
 File: `AXI/scripts/filelist.f`
 ```
@@ -163,7 +163,7 @@ tb/axi_test.sv
 tb/tb_top.sv
 ```
 
-- [ ] **Step 7: Write Makefile**
+- [x] **Step 7: Write Makefile**
 
 File: `AXI/Makefile`
 ```makefile
@@ -191,14 +191,14 @@ clean:
 	rm -rf DVEfiles build build2
 ```
 
-- [ ] **Step 8: Create RTL and TB directories**
+- [x] **Step 8: Create RTL and TB directories**
 
 ```bash
 mkdir -p /home/openclaw/project/bus/AXI/rtl
 mkdir -p /home/openclaw/project/bus/AXI/tb
 ```
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 cd /home/openclaw/project/bus/AXI
@@ -220,7 +220,7 @@ git commit -m "chore: add AXI project infrastructure (scripts, Makefile, filelis
   - `axi_pkg` package with `axi_transaction` UVM sequence item
   - AXI channel packed structs: `axi_aw_chan_t`, `axi_w_chan_t`, `axi_b_chan_t`, `axi_ar_chan_t`, `axi_r_chan_t`
 
-- [ ] **Step 1: Write axi_if.sv**
+- [x] **Step 1: Write axi_if.sv**
 
 File: `AXI/tb/axi_if.sv`
 ```systemverilog
@@ -352,7 +352,7 @@ interface axi_if #(
 endinterface : axi_if
 ```
 
-- [ ] **Step 2: Write axi_pkg.sv**
+- [x] **Step 2: Write axi_pkg.sv**
 
 File: `AXI/tb/axi_pkg.sv`
 ```systemverilog
@@ -530,7 +530,7 @@ package axi_pkg;
 endpackage : axi_pkg
 ```
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 cd /home/openclaw/project/bus/AXI
@@ -554,7 +554,7 @@ git commit -m "feat: add AXI interface and UVM transaction package"
   - Outputs: req, AW/W/AR channel signals, bready/rready
   - Outputs: `txn_done`, `txn_bresp`, `txn_rdata`, `txn_rresp`, `txn_rlast`
 
-- [ ] **Step 1: Write axi_master.sv**
+- [x] **Step 1: Write axi_master.sv**
 
 File: `AXI/rtl/axi_master.sv`
 ```systemverilog
@@ -784,7 +784,7 @@ module axi_master #(
 endmodule : axi_master
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 cd /home/openclaw/project/bus/AXI
@@ -807,7 +807,7 @@ git commit -m "feat: add AXI4-Full master module with per-channel FSMs"
   - Per-slave outputs: AW channel (awid/awaddr/.../awvalid), awready input; W channel (wdata/.../wvalid), wready input; B channel inputs (bid/bresp/bvalid), bready output
   - Round-robin per-slave AW arbitration, W channel locking, B demux
 
-- [ ] **Step 1: Write axi_crossbar_wr.sv**
+- [x] **Step 1: Write axi_crossbar_wr.sv**
 
 File: `AXI/rtl/axi_crossbar_wr.sv`
 ```systemverilog
@@ -1004,7 +1004,7 @@ module axi_crossbar_wr #(
 endmodule : axi_crossbar_wr
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 cd /home/openclaw/project/bus/AXI
@@ -1028,7 +1028,7 @@ git commit -m "feat: add AXI write crossbar with per-slave round-robin arbitrati
   - ID LUT: 256 entries × 2-bit (master_id + valid) for R channel demux
   - Out-of-order R response routing by RID
 
-- [ ] **Step 1: Write axi_crossbar_rd.sv**
+- [x] **Step 1: Write axi_crossbar_rd.sv**
 
 File: `AXI/rtl/axi_crossbar_rd.sv`
 ```systemverilog
@@ -1226,7 +1226,7 @@ module axi_crossbar_rd #(
 endmodule : axi_crossbar_rd
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 cd /home/openclaw/project/bus/AXI
@@ -1249,7 +1249,7 @@ git commit -m "feat: add AXI read crossbar with ID LUT for out-of-order R routin
   - Outputs: `aw_sel[NUM_SLAVES]`, `ar_sel[NUM_SLAVES]`, `aw_decerr`, `ar_decerr`
   - Address map: awaddr[31:28]=0→slave0 (SRAM), 1→slave1 (DFI), other→DECERR
 
-- [ ] **Step 1: Write axi_addr_decoder.sv**
+- [x] **Step 1: Write axi_addr_decoder.sv**
 
 File: `AXI/rtl/axi_addr_decoder.sv`
 ```systemverilog
@@ -1295,7 +1295,7 @@ module axi_addr_decoder #(
 endmodule : axi_addr_decoder
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 cd /home/openclaw/project/bus/AXI
@@ -1319,7 +1319,7 @@ git commit -m "feat: add AXI address decoder (SRAM=0x0, DFI=0x1)"
   - Supports all burst types, narrow transfers via WSTRB masking
   - Configurable stall probability
 
-- [ ] **Step 1: Write axi_slave_sram.sv**
+- [x] **Step 1: Write axi_slave_sram.sv**
 
 File: `AXI/rtl/axi_slave_sram.sv`
 ```systemverilog
@@ -1512,7 +1512,7 @@ module axi_slave_sram #(
 endmodule : axi_slave_sram
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 cd /home/openclaw/project/bus/AXI
@@ -1536,7 +1536,7 @@ git commit -m "feat: add AXI SRAM slave with burst and narrow transfer support"
   - Transaction queue (16 entries), DDR5 timing FSM
   - DDR5 timing: tRCD=14, tCL=14, tRAS=32, tRP=14, tWR=14, BL16
 
-- [ ] **Step 1: Write axi_slave_dfi.sv**
+- [x] **Step 1: Write axi_slave_dfi.sv**
 
 File: `AXI/rtl/axi_slave_dfi.sv`
 ```systemverilog
@@ -1906,7 +1906,7 @@ module axi_slave_dfi #(
 endmodule : axi_slave_dfi
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 cd /home/openclaw/project/bus/AXI
@@ -1932,7 +1932,7 @@ git commit -m "feat: add AXI-to-DFI bridge for DDR5 with timing FSM"
   - Master ports, slave ports, decoded slave selects
   - Connects AW/AR signals through decoder → per-slave crossbar inputs
 
-- [ ] **Step 1: Write axi_interconnect.sv**
+- [x] **Step 1: Write axi_interconnect.sv**
 
 File: `AXI/rtl/axi_interconnect.sv`
 ```systemverilog
@@ -2180,7 +2180,7 @@ module axi_interconnect #(
 endmodule : axi_interconnect
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 cd /home/openclaw/project/bus/AXI
@@ -2202,7 +2202,7 @@ git commit -m "feat: add AXI interconnect integrating crossbars and decoder"
   - 2 masters, interconnect, 1 SRAM slave, 1 DFI slave
   - Exposes per-master txn control ports and DFI port
 
-- [ ] **Step 1: Write axi_top.sv**
+- [x] **Step 1: Write axi_top.sv**
 
 File: `AXI/rtl/axi_top.sv`
 ```systemverilog
@@ -2551,7 +2551,7 @@ module axi_top #(
 endmodule : axi_top
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 cd /home/openclaw/project/bus/AXI
@@ -2572,7 +2572,7 @@ git commit -m "feat: add AXI top-level integration with 2 masters, SRAM, and DFI
 - Consumes: `axi_pkg::axi_transaction`, `axi_if` (from Task 2)
 - Produces: `axi_master_driver` class that translates `axi_transaction` items to AXI bus signals via `axi_if.drv_cb`
 
-- [ ] **Step 1: Write axi_master_driver.sv**
+- [x] **Step 1: Write axi_master_driver.sv**
 
 File: `AXI/tb/axi_master_driver.sv`
 ```systemverilog
@@ -2698,7 +2698,7 @@ class axi_master_driver extends uvm_driver #(axi_transaction);
 endclass : axi_master_driver
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 cd /home/openclaw/project/bus/AXI && git add tb/axi_master_driver.sv && git commit -m "feat: add UVM master driver for AXI bus"
@@ -2715,7 +2715,7 @@ cd /home/openclaw/project/bus/AXI && git add tb/axi_master_driver.sv && git comm
 - Consumes: `axi_if`, `axi_pkg`
 - Produces: `axi_master_monitor` with analysis port broadcasting observed transactions
 
-- [ ] **Step 1: Write axi_master_monitor.sv**
+- [x] **Step 1: Write axi_master_monitor.sv**
 
 File: `AXI/tb/axi_master_monitor.sv`
 ```systemverilog
@@ -2812,7 +2812,7 @@ class axi_master_monitor extends uvm_monitor;
 endclass : axi_master_monitor
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 cd /home/openclaw/project/bus/AXI && git add tb/axi_master_monitor.sv && git commit -m "feat: add UVM master monitor for AXI transaction observation"
@@ -2829,7 +2829,7 @@ cd /home/openclaw/project/bus/AXI && git add tb/axi_master_monitor.sv && git com
 - Consumes: `axi_if`, `axi_pkg`
 - Produces: `axi_slave_monitor` observing slave-side AXI bus activity
 
-- [ ] **Step 1: Write axi_slave_monitor.sv**
+- [x] **Step 1: Write axi_slave_monitor.sv**
 
 File: `AXI/tb/axi_slave_monitor.sv`
 ```systemverilog
@@ -2912,7 +2912,7 @@ class axi_slave_monitor extends uvm_monitor;
 endclass : axi_slave_monitor
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 cd /home/openclaw/project/bus/AXI && git add tb/axi_slave_monitor.sv && git commit -m "feat: add UVM slave-side monitor"
@@ -2929,7 +2929,7 @@ cd /home/openclaw/project/bus/AXI && git add tb/axi_slave_monitor.sv && git comm
 - Consumes: `axi_master_driver`, `axi_master_monitor`
 - Produces: `axi_master_agent` with sequencer, driver, and monitor
 
-- [ ] **Step 1: Write axi_master_agent.sv**
+- [x] **Step 1: Write axi_master_agent.sv**
 
 File: `AXI/tb/axi_master_agent.sv`
 ```systemverilog
@@ -2968,7 +2968,7 @@ class axi_master_agent extends uvm_agent;
 endclass : axi_master_agent
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 cd /home/openclaw/project/bus/AXI && git add tb/axi_master_agent.sv && git commit -m "feat: add UVM master agent with sequencer, driver, and monitor"
@@ -2985,7 +2985,7 @@ cd /home/openclaw/project/bus/AXI && git add tb/axi_master_agent.sv && git commi
 - Consumes: `axi_pkg::axi_transaction`
 - Produces: `axi_scoreboard` with SRAM reference model and DFI reference model, TLM analysis exports
 
-- [ ] **Step 1: Write axi_scoreboard.sv**
+- [x] **Step 1: Write axi_scoreboard.sv**
 
 File: `AXI/tb/axi_scoreboard.sv`
 ```systemverilog
@@ -3102,7 +3102,7 @@ class axi_scoreboard extends uvm_scoreboard;
 endclass : axi_scoreboard
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 cd /home/openclaw/project/bus/AXI && git add tb/axi_scoreboard.sv && git commit -m "feat: add UVM scoreboard with SRAM and DFI reference models"
@@ -3119,7 +3119,7 @@ cd /home/openclaw/project/bus/AXI && git add tb/axi_scoreboard.sv && git commit 
 - Consumes: `axi_master_agent`, `axi_scoreboard`
 - Produces: `axi_env` connecting 2 agents + scoreboard
 
-- [ ] **Step 1: Write axi_env.sv**
+- [x] **Step 1: Write axi_env.sv**
 
 File: `AXI/tb/axi_env.sv`
 ```systemverilog
@@ -3157,7 +3157,7 @@ class axi_env extends uvm_env;
 endclass : axi_env
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 cd /home/openclaw/project/bus/AXI && git add tb/axi_env.sv && git commit -m "feat: add UVM environment with 2 agents and scoreboard"
@@ -3174,7 +3174,7 @@ cd /home/openclaw/project/bus/AXI && git add tb/axi_env.sv && git commit -m "fea
 - Consumes: `axi_pkg::axi_transaction`
 - Produces: Multiple sequence classes for different test scenarios
 
-- [ ] **Step 1: Write sequence_lib.sv**
+- [x] **Step 1: Write sequence_lib.sv**
 
 File: `AXI/tb/sequence_lib.sv`
 ```systemverilog
@@ -3400,7 +3400,7 @@ class axi_error_seq extends uvm_sequence #(axi_transaction);
 endclass
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 cd /home/openclaw/project/bus/AXI && git add tb/sequence_lib.sv && git commit -m "feat: add UVM sequence library (sanity, random, burst, narrow, OOO, concurrent, error)"
@@ -3417,7 +3417,7 @@ cd /home/openclaw/project/bus/AXI && git add tb/sequence_lib.sv && git commit -m
 - Consumes: `axi_env`, `sequence_lib`
 - Produces: `axi_base_test` and named test classes
 
-- [ ] **Step 1: Write axi_test.sv**
+- [x] **Step 1: Write axi_test.sv**
 
 File: `AXI/tb/axi_test.sv`
 ```systemverilog
@@ -3554,7 +3554,7 @@ class axi_error_test extends axi_base_test;
 endclass : axi_error_test
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 cd /home/openclaw/project/bus/AXI && git add tb/axi_test.sv && git commit -m "feat: add UVM base test and all test classes"
@@ -3571,7 +3571,7 @@ cd /home/openclaw/project/bus/AXI && git add tb/axi_test.sv && git commit -m "fe
 - Consumes: `axi_top`, `axi_if`, `axi_pkg`, all UVM components
 - Produces: `tb_top` with DUT, clock/reset generation, interface binding, `run_test()`
 
-- [ ] **Step 1: Write tb_top.sv**
+- [x] **Step 1: Write tb_top.sv**
 
 File: `AXI/tb/tb_top.sv`
 ```systemverilog
@@ -3744,7 +3744,7 @@ module tb_top;
 endmodule : tb_top
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 cd /home/openclaw/project/bus/AXI && git add tb/tb_top.sv && git commit -m "feat: add testbench top with DUT connection, clock/reset, assertions"
@@ -3760,7 +3760,7 @@ cd /home/openclaw/project/bus/AXI && git add tb/tb_top.sv && git commit -m "feat
 **Interfaces:**
 - Consumes: All RTL and TB files from Tasks 1-19
 
-- [ ] **Step 1: Compile all sources**
+- [x] **Step 1: Compile all sources**
 
 ```bash
 cd /home/openclaw/project/bus/AXI && bash scripts/compile.sh 2>&1 | tail -30
@@ -3768,7 +3768,7 @@ cd /home/openclaw/project/bus/AXI && bash scripts/compile.sh 2>&1 | tail -30
 
 Expected: "=== Compile SUCCESS ==="
 
-- [ ] **Step 2: Run sanity test**
+- [x] **Step 2: Run sanity test**
 
 ```bash
 cd /home/openclaw/project/bus/AXI && bash scripts/run.sh axi_sanity_test 2>&1 | tail -30
@@ -3776,7 +3776,7 @@ cd /home/openclaw/project/bus/AXI && bash scripts/run.sh axi_sanity_test 2>&1 | 
 
 Expected: UVM report with PASS, no UVM_ERROR or UVM_FATAL.
 
-- [ ] **Step 3: Run random test**
+- [x] **Step 3: Run random test**
 
 ```bash
 cd /home/openclaw/project/bus/AXI && bash scripts/run.sh axi_random_test 2>&1 | tail -20
@@ -3784,7 +3784,7 @@ cd /home/openclaw/project/bus/AXI && bash scripts/run.sh axi_random_test 2>&1 | 
 
 Expected: No data mismatches reported by scoreboard.
 
-- [ ] **Step 4: Commit any fixes (if applicable)**
+- [x] **Step 4: Commit any fixes (if applicable)**
 
 ```bash
 cd /home/openclaw/project/bus/AXI && git add -A && git commit -m "chore: compile fixes and test verification"
