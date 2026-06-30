@@ -19,4 +19,5 @@ clean:
 	rm -rf verdiLog novas.conf novas_dump.log novas.rc
 	rm -rf AN.DB csrc vc_hdrs.h uvm_dpi.so*
 	rm -rf tr_db.log ucli.key vlogan.log inter.vpd
-	rm -rf DVEfiles
+	rm -rf DVEfiles build build2
+	rm -f pthread_yield_compat.o

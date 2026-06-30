@@ -38,10 +38,13 @@ package noc_config_pkg;
     PORT_NONE  = 3'b111
   } port_dir_t;
 
-  // X/Y coordinates
+  // X/Y coordinates — widths derived from mesh dimensions
+  localparam int COORD_X_W = $clog2(MESH_X);
+  localparam int COORD_Y_W = $clog2(MESH_Y);
+
   typedef struct packed {
-    logic [3:0] x;
-    logic [3:0] y;
+    logic [COORD_X_W-1:0] x;
+    logic [COORD_Y_W-1:0] y;
   } coord_t;
 
   // Node ID = {Y[2:0], X[2:0]}
