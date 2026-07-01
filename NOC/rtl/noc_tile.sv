@@ -126,6 +126,21 @@ module noc_tile #(
   // NI VC0 → Router local input
   // Router local output → NI VC1
 
+  // Credit counter for NI→Router VC0 (mirrors output_port credit tracking)
+  logic [$clog2(VC_DEPTH):0] ni_vc0_credits;
+  logic ni_vc0_ready;
+  always_ff @(posedge clk or negedge rst_n) begin
+    if (!rst_n) begin
+      ni_vc0_credits <= VC_DEPTH;
+    end else begin
+      if (router_in_valid[PORT_LOCAL] && ni_vc0_ready && ni_vc0_credits > 0)
+        ni_vc0_credits <= ni_vc0_credits - 1'b1;
+      if (router_credit_out_v0[PORT_LOCAL])
+        ni_vc0_credits <= ni_vc0_credits + 1'b1;
+    end
+  end
+  assign ni_vc0_ready = (ni_vc0_credits > 0);
+
   ni_axi4 #(.DATA_W(DATA_W), .NI_FIFO_DEPTH(NI_FIFO_DEPTH)) ni (
     .clk, .rst_n,
     .awvalid, .awready, .awaddr, .awid, .awlen, .awburst, .awsize,
@@ -141,15 +156,15 @@ module noc_tile #(
     .dst_coord(),
     .vc0_flit_out(router_in_flit[PORT_LOCAL]),
     .vc0_flit_valid(router_in_valid[PORT_LOCAL]),
-    .vc0_flit_ready(),  // credit from router
+    .vc0_flit_ready(ni_vc0_ready),          // NI → router: gated by credit count
     .vc1_flit_in(router_out_flit[PORT_LOCAL]),
     .vc1_flit_valid(router_out_valid[PORT_LOCAL]),
-    .vc1_flit_ready()   // credit to router
+    .vc1_flit_ready(router_credit_in_v1[PORT_LOCAL])   // NI → router: VC1 credit
   );
 
   assign router_in_vc[PORT_LOCAL] = '{default: '0};  // default VC0 for local
-  assign router_credit_in_v0[PORT_LOCAL] = 1'b1;      // backpressure from NI later
-  assign router_credit_in_v1[PORT_LOCAL] = 1'b1;
+  assign router_credit_in_v0[PORT_LOCAL] = ni_vc0_ready;  // router: credit from NI (NI ready = FIFO has space)
+  // router_credit_in_v1[PORT_LOCAL] driven by vc1_flit_ready above
 
   // Router
   router_5port #(

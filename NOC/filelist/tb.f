@@ -3,6 +3,9 @@
 tb/noc_if.sv
 tb/noc_pkg.sv
 tb/noc_scoreboard.sv
+tb/noc_driver.sv
+tb/noc_monitor.sv
+tb/noc_agent.sv
 tb/noc_env.sv
 tb/noc_sequence.sv
 tb/noc_test.sv

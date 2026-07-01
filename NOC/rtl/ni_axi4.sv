@@ -111,17 +111,26 @@ module ni_axi4 #(
     .flit_out(rp_flit), .flit_valid(rp_valid), .flit_ready(rp_ready)
   );
 
-  // --- VC0 Sender: Mux write/read flits to single local input ---
-  logic vc0_sel;  // 0=write, 1=read
-  always_ff @(posedge clk or negedge rst_n) begin
-    if (!rst_n) vc0_sel <= 1'b0;
-    else if (vc0_flit_valid && vc0_flit_ready) vc0_sel <= ~vc0_sel;
-  end
+  // --- VC0 Sender: Mux write/read/response flits to single local input ---
+  // Priority: response > write > read (response has highest priority to avoid deadlock)
+  noc_flit_pkg::flit_t rs_flit;
+  logic rs_valid, rs_ready;
 
-  assign vc0_flit_out   = vc0_sel ? rp_flit : wp_flit;
-  assign vc0_flit_valid = vc0_sel ? rp_valid : wp_valid;
-  assign wp_ready       = !vc0_sel && vc0_flit_ready;
-  assign rp_ready       = vc0_sel && vc0_flit_ready;
+  ni_response_sender #(.DATA_W(DATA_W)) rs (
+    .clk, .rst_n,
+    .vc1_flit_in,
+    .vc1_flit_valid(vc1_flit_valid && vc1_wr_sel),
+    .vc1_flit_ready(),
+    .resp_flit_out(rs_flit),
+    .resp_flit_valid(rs_valid),
+    .resp_flit_ready(rs_ready)
+  );
+
+  assign vc0_flit_out   = rs_valid ? rs_flit : (wp_valid ? wp_flit : rp_flit);
+  assign vc0_flit_valid = rs_valid || wp_valid || rp_valid;
+  assign rs_ready       = vc0_flit_ready;
+  assign wp_ready       = !rs_valid && vc0_flit_ready;
+  assign rp_ready       = !rs_valid && !wp_valid && vc0_flit_ready;
 
   // --- VC1 Receiver: Demux to write response and read data unpackers ---
   // Simple demux: HEADER with response type → B; BODY/TAIL → R

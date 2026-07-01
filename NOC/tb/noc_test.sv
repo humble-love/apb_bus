@@ -30,10 +30,11 @@ class noc_sanity_test extends noc_base_test;
   endfunction
 
   task run_phase(uvm_phase phase);
-    `uvm_info("TB", "NOC sanity test — reset + idle check", UVM_NONE)
+    noc_sanity_sequence seq;
+    `uvm_info("TB", "NOC sanity test — neighbor write (0,0) → (1,0)", UVM_NONE)
     phase.raise_objection(this);
-    // Wait a few cycles for reset deassertion and idle stabilization
-    repeat (20) @(posedge tb_top.clk);
+    seq = noc_sanity_sequence::type_id::create("seq");
+    seq.start(env.agent.sequencer);
     `uvm_info("TB", "Sanity test passed.", UVM_NONE)
     phase.drop_objection(this);
   endtask
@@ -47,9 +48,11 @@ class noc_rr_test extends noc_base_test;
   endfunction
 
   task run_phase(uvm_phase phase);
-    `uvm_info("TB", "NOC random test — reset + idle check", UVM_NONE)
+    noc_rr_sequence seq;
+    `uvm_info("TB", "NOC random test — 10 random transactions", UVM_NONE)
     phase.raise_objection(this);
-    repeat (100) @(posedge tb_top.clk);
+    seq = noc_rr_sequence::type_id::create("seq");
+    seq.start(env.agent.sequencer);
     `uvm_info("TB", "Random test passed.", UVM_NONE)
     phase.drop_objection(this);
   endtask

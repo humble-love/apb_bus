@@ -85,6 +85,15 @@ module tb_top;
       for (x = 0; x < MESH_X; x++) begin : x_gen
         localparam int IDX = y * MESH_X + x;
 
+        // Default: tie off unused AXI inputs for tiles without BFM
+        if (IDX != 0) begin : tie_off
+          assign axi_if[IDX].bready  = 1'b1;
+          assign axi_if[IDX].rready  = 1'b1;
+          assign axi_if[IDX].awvalid = 1'b0;
+          assign axi_if[IDX].wvalid  = 1'b0;
+          assign axi_if[IDX].arvalid = 1'b0;
+        end
+
         // AW channel
         assign awvalid_w[y][x] = axi_if[IDX].awvalid;
         assign axi_if[IDX].awready = awready_w[y][x];
