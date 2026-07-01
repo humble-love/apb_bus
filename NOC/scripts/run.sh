@@ -1,5 +1,8 @@
 #!/bin/bash
 set -e
+VERDI_HOME=${VERDI_HOME:-/home/openclaw/hardware/Synopsys/Install/verdi/Verdi_O-2018.09-SP2}
+export LD_LIBRARY_PATH="$VERDI_HOME/share/PLI/VCS/LINUX64:$LD_LIBRARY_PATH"
+
 TEST=${1:-noc_sanity_test}
 
 ./simv +UVM_TESTNAME=$TEST \

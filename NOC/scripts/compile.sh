@@ -11,6 +11,7 @@ mkdir -p waves
 
 # Ensure VCS tools are in PATH
 export PATH="$VCS_HOME/bin:$PATH"
+export LD_LIBRARY_PATH="$VERDI_HOME/share/PLI/VCS/LINUX64:$LD_LIBRARY_PATH"
 
 # License
 export LM_LICENSE_FILE=${LM_LICENSE_FILE:-27000@DESKTOP-T4G2P5D}
@@ -32,6 +33,7 @@ bwrap --bind / / --dev /dev --bind /bin/bash /usr/bin/dash bash -c "
     export VCS_HOME=\"$VCS_HOME\"
     export VERDI_HOME=\"$VERDI_HOME\"
     export PATH=\"$VCS_HOME/bin:\$PATH\"
+    export LD_LIBRARY_PATH=\"$VERDI_HOME/share/PLI/VCS/LINUX64:\$LD_LIBRARY_PATH\"
     vcs \
         -full64 \
         -sverilog \

@@ -1,2 +1,9 @@
 +incdir+tb
 +incdir+rtl
+tb/noc_if.sv
+tb/noc_pkg.sv
+tb/noc_scoreboard.sv
+tb/noc_env.sv
+tb/noc_sequence.sv
+tb/noc_test.sv
+tb/tb_top.sv
