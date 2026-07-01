@@ -54,7 +54,9 @@ module ni_read_packer #(
       hdr.axsize  = arsize;
       hdr.axlock  = arlock;
       hdr.axcache = arcache;
-      hdr.axprot  = '0;
+      hdr.axprot      = '0;
+      hdr.is_read     = 1'b1;
+      hdr.is_response = 1'b0;
       flit_out = flit_make_header(hdr);
     end
   end

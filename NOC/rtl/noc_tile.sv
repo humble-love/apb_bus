@@ -129,17 +129,33 @@ module noc_tile #(
   // Credit counter for NI→Router VC0 (mirrors output_port credit tracking)
   logic [$clog2(VC_DEPTH):0] ni_vc0_credits;
   logic ni_vc0_ready;
+  logic ni_vc0_dec, ni_vc0_inc;
+  assign ni_vc0_dec = router_in_valid[PORT_LOCAL] && ni_vc0_ready && ni_vc0_credits > 0;
+  assign ni_vc0_inc = router_credit_out_v0[PORT_LOCAL];
   always_ff @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
       ni_vc0_credits <= VC_DEPTH;
     end else begin
-      if (router_in_valid[PORT_LOCAL] && ni_vc0_ready && ni_vc0_credits > 0)
+      if (ni_vc0_dec && !ni_vc0_inc)
         ni_vc0_credits <= ni_vc0_credits - 1'b1;
-      if (router_credit_out_v0[PORT_LOCAL])
+      else if (!ni_vc0_dec && ni_vc0_inc)
         ni_vc0_credits <= ni_vc0_credits + 1'b1;
     end
   end
   assign ni_vc0_ready = (ni_vc0_credits > 0);
+
+  // VC1 credit pulse for LOCAL output port (NI→Router VC1)
+  // NI vc1_flit_ready is a level (simplified: always 1).
+  // Credit must be a pulse, not a level, for output_port counter.
+  // Pulse on rising edge of valid (one-shot per flit consumed by NI).
+  logic vc1_ni_ready;
+  logic vc1_consumed_d;  // registered to detect edge
+  always_ff @(posedge clk or negedge rst_n) begin
+    if (!rst_n) vc1_consumed_d <= 1'b0;
+    else vc1_consumed_d <= router_out_valid[PORT_LOCAL] && vc1_ni_ready;
+  end
+  // 1-cycle pulse when NI receives a new flit
+  wire vc1_credit_pulse = router_out_valid[PORT_LOCAL] && vc1_ni_ready && !vc1_consumed_d;
 
   ni_axi4 #(.DATA_W(DATA_W), .NI_FIFO_DEPTH(NI_FIFO_DEPTH)) ni (
     .clk, .rst_n,
@@ -159,12 +175,12 @@ module noc_tile #(
     .vc0_flit_ready(ni_vc0_ready),          // NI → router: gated by credit count
     .vc1_flit_in(router_out_flit[PORT_LOCAL]),
     .vc1_flit_valid(router_out_valid[PORT_LOCAL]),
-    .vc1_flit_ready(router_credit_in_v1[PORT_LOCAL])   // NI → router: VC1 credit
+    .vc1_flit_ready(vc1_ni_ready)            // NI drives its ready (level)
   );
 
-  assign router_in_vc[PORT_LOCAL] = '{default: '0};  // default VC0 for local
-  assign router_credit_in_v0[PORT_LOCAL] = ni_vc0_ready;  // router: credit from NI (NI ready = FIFO has space)
-  // router_credit_in_v1[PORT_LOCAL] driven by vc1_flit_ready above
+  assign router_in_vc[PORT_LOCAL] = '{default: '0};  // NI always sends on VC0
+  assign router_credit_in_v0[PORT_LOCAL] = 1'b0;       // NI receives only on VC1, not VC0
+  assign router_credit_in_v1[PORT_LOCAL] = vc1_credit_pulse;  // pulse: NI consumed a flit
 
   // Router
   router_5port #(

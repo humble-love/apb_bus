@@ -27,7 +27,7 @@ class noc_neighbor_write_seq extends noc_base_sequence;
     tx = axi_transaction::type_id::create("tx");
     tx.is_write = 1;
     // NI address decode: dst_y = addr[28:26], dst_x = addr[25:23]
-    tx.addr = {3'b0, dst_y[2:0], dst_x[2:0], 3'b0, src_y[2:0], src_x[2:0], 6'h00};
+    tx.addr = {3'b0, dst_y[2:0], dst_x[2:0], 3'b0, src_y[2:0], src_x[2:0], 14'h0000};
     tx.id   = {src_x[2:0], src_y[2:0]};
     tx.len  = 0;
     tx.burst = 2'b01;  // INCR
@@ -43,6 +43,88 @@ class noc_neighbor_write_seq extends noc_base_sequence;
     `uvm_info("NOC_SEQ", $sformatf("Write (%0d,%0d)->(%0d,%0d) addr=0x%08h", src_x, src_y, dst_x, dst_y, tx.addr), UVM_NONE)
     finish_item(tx);
     `uvm_info("NOC_SEQ", $sformatf("Write complete: bid=%0d bresp=%0d", tx.bid, tx.resp), UVM_NONE)
+  endtask
+endclass
+
+// Single-beat read from tile (src_x, src_y) → tile (dst_x, dst_y)
+class noc_neighbor_read_seq extends noc_base_sequence;
+  `uvm_object_utils(noc_neighbor_read_seq)
+
+  int src_x, src_y, dst_x, dst_y;
+
+  function new(string name = "noc_neighbor_read_seq");
+    super.new(name);
+  endfunction
+
+  task body();
+    axi_transaction tx;
+    tx = axi_transaction::type_id::create("tx");
+    tx.is_write = 0;  // read
+    tx.addr = {3'b0, dst_y[2:0], dst_x[2:0], 3'b0, src_y[2:0], src_x[2:0], 14'h0000};
+    tx.id   = {src_x[2:0], src_y[2:0]};
+    tx.len  = 0;
+    tx.burst = 2'b01;
+    tx.size = 3'd6;
+    tx.qos  = 4'b0010;
+
+    start_item(tx);
+    `uvm_info("NOC_SEQ", $sformatf("Read (%0d,%0d)->(%0d,%0d) addr=0x%08h", src_x, src_y, dst_x, dst_y, tx.addr), UVM_NONE)
+    finish_item(tx);
+    `uvm_info("NOC_SEQ", $sformatf("Read complete: rid=%0d rresp=%0d rlast=%0d", tx.bid, tx.resp, tx.rdata[0][15:0]), UVM_NONE)
+  endtask
+endclass
+
+// Multi-hop: write across 2+ hops in the mesh
+class noc_multi_hop_sequence extends noc_base_sequence;
+  `uvm_object_utils(noc_multi_hop_sequence)
+
+  function new(string name = "noc_multi_hop_sequence");
+    super.new(name);
+  endfunction
+
+  task body();
+    noc_neighbor_write_seq nw_seq;
+
+    // 2 hops east: (0,0)→(2,0)
+    nw_seq = noc_neighbor_write_seq::type_id::create("nw_seq");
+    nw_seq.src_x = 0; nw_seq.src_y = 0;
+    nw_seq.dst_x = 2; nw_seq.dst_y = 0;
+    nw_seq.start(m_sequencer);
+    `uvm_info("MULTI_HOP", "2-hop east write (0,0)→(2,0) completed", UVM_NONE)
+
+    // 2 hops south: (0,0)→(0,2)
+    nw_seq = noc_neighbor_write_seq::type_id::create("nw_seq");
+    nw_seq.src_x = 0; nw_seq.src_y = 0;
+    nw_seq.dst_x = 0; nw_seq.dst_y = 2;
+    nw_seq.start(m_sequencer);
+    `uvm_info("MULTI_HOP", "2-hop south write (0,0)→(0,2) completed", UVM_NONE)
+
+    // Diagonal: (0,0)→(1,1)
+    nw_seq = noc_neighbor_write_seq::type_id::create("nw_seq");
+    nw_seq.src_x = 0; nw_seq.src_y = 0;
+    nw_seq.dst_x = 1; nw_seq.dst_y = 1;
+    nw_seq.start(m_sequencer);
+    `uvm_info("MULTI_HOP", "Diagonal write (0,0)→(1,1) completed", UVM_NONE)
+  endtask
+endclass
+
+// Read test sequence
+class noc_read_sequence extends noc_base_sequence;
+  `uvm_object_utils(noc_read_sequence)
+
+  function new(string name = "noc_read_sequence");
+    super.new(name);
+  endfunction
+
+  task body();
+    noc_neighbor_read_seq nr_seq;
+
+    // Read (0,0)→(1,0): neighbor read
+    nr_seq = noc_neighbor_read_seq::type_id::create("nr_seq");
+    nr_seq.src_x = 0; nr_seq.src_y = 0;
+    nr_seq.dst_x = 1; nr_seq.dst_y = 0;
+    nr_seq.start(m_sequencer);
+    `uvm_info("READ", "Neighbor read (0,0)→(1,0) completed", UVM_NONE)
   endtask
 endclass
 

@@ -24,8 +24,8 @@ module route_compute #(
     else if (dx < 0)
       next_port = PORT_WEST;
     else if (dy > 0)
-      next_port = PORT_NORTH;
+      next_port = PORT_SOUTH;   // larger Y = going down
     else
-      next_port = PORT_SOUTH;
+      next_port = PORT_NORTH;   // smaller Y = going up
   end
 endmodule

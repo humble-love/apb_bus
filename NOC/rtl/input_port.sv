@@ -36,14 +36,21 @@ module input_port #(
       rd_ptr <= '0;
       count  <= '0;
     end else begin
-      if (link_valid && link_vc == my_vc && count < VC_DEPTH) begin
+      logic do_write, do_pop;
+      do_write = link_valid && link_vc == my_vc && count < VC_DEPTH;
+      do_pop   = vc_pop && count > 0;
+      if (do_write && !do_pop) begin
         mem[wr_ptr] <= link_flit;
         wr_ptr <= wr_ptr + 1'b1;
         count  <= count + 1'b1;
-      end
-      if (vc_pop && count > 0) begin
+      end else if (!do_write && do_pop) begin
         rd_ptr <= rd_ptr + 1'b1;
         count  <= count - 1'b1;
+      end else if (do_write && do_pop) begin
+        mem[wr_ptr] <= link_flit;
+        wr_ptr <= wr_ptr + 1'b1;
+        rd_ptr <= rd_ptr + 1'b1;
+        // count unchanged: +1 for write, -1 for pop
       end
     end
   end

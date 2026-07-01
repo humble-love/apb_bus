@@ -30,6 +30,8 @@ package noc_flit_pkg;
     logic [3:0]  axlock;   // AXI lock type
     logic [1:0]  axcache;  // AXI cache type
     logic [3:0]  axprot;   // AXI protection type
+    logic        is_read;    // 1=read, 0=write
+    logic        is_response; // 1=response (B/R), 0=request (AW/AR)
   } flit_header_t;
 
   localparam int FLIT_PAYLOAD_W = 510;

@@ -94,7 +94,9 @@ module ni_write_packer #(
       hdr.axsize  = aw_buf_size;
       hdr.axlock  = aw_buf_lock;
       hdr.axcache = aw_buf_cache;
-      hdr.axprot  = '0;
+      hdr.axprot      = '0;
+      hdr.is_read     = 1'b0;
+      hdr.is_response = 1'b0;
       flit_out = flit_make_header(hdr);
     end else if (state == ST_BODY) begin
       flit_out = flit_make_body(wstrb, wdata[445:0],

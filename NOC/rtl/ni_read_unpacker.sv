@@ -1,4 +1,6 @@
-// ni_read_unpacker.sv — Flit stream to AXI4 R channel with OOO support
+// ni_read_unpacker.sv — Flit stream to AXI4 R channel
+// Receives read response: HEADER (is_read=1) → captures axid/rid
+// followed by BODY/TAIL flits → captures data → drives R channel
 module ni_read_unpacker #(
   parameter int DATA_W         = 512,
   parameter int AXI_ID_W       = 8
@@ -34,13 +36,16 @@ module ni_read_unpacker #(
       r_data    <= '0;
       r_last    <= 1'b0;
     end else begin
+      // HEADER: capture response transaction ID
+      if (flit_valid && flit_ready && flit_in.ftype == FLIT_HEADER) begin
+        flit_header_t hdr;
+        hdr = unpack_header(flit_in.payload);
+        r_id <= hdr.axid;
+      end
+      // BODY/TAIL: capture read data from payload
       if (flit_valid && flit_ready &&
           (flit_in.ftype == FLIT_BODY || flit_in.ftype == FLIT_TAIL)) begin
-        // Extract header for ID (carried in first body's context or from tracking)
-        // Simplified: ID from flit metadata passed by the response header
-        flit_header_t hdr = unpack_header(flit_in.payload);
-        r_id      <= hdr.axid;
-        r_data    <= {flit_get_data(flit_in), flit_get_wstrb(flit_in)};
+        r_data    <= {2'b00, flit_in.payload};  // 510-bit payload → 512-bit rdata
         r_last    <= (flit_in.ftype == FLIT_TAIL);
         r_pending <= 1'b1;
       end else if (rready && r_pending) begin

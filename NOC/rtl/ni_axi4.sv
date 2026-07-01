@@ -111,45 +111,65 @@ module ni_axi4 #(
     .flit_out(rp_flit), .flit_valid(rp_valid), .flit_ready(rp_ready)
   );
 
-  // --- VC0 Sender: Mux write/read/response flits to single local input ---
-  // Priority: response > write > read (response has highest priority to avoid deadlock)
-  noc_flit_pkg::flit_t rs_flit;
-  logic rs_valid, rs_ready;
+  // --- VC1 header decode for demux ---
+  logic vc1_hdr_is_read, vc1_hdr_is_resp;
+  flit_header_t vc1_hdr;
+  assign vc1_hdr = unpack_header(vc1_flit_in.payload);
+  assign vc1_hdr_is_read = vc1_flit_valid && (vc1_flit_in.ftype == FLIT_HEADER)
+                           && vc1_hdr.is_read;
+  assign vc1_hdr_is_resp = vc1_flit_valid && (vc1_flit_in.ftype == FLIT_HEADER)
+                           && vc1_hdr.is_response;
+
+  // --- VC0 Sender: 4-source priority mux ---
+  // Priority: B response > read response > write request > read request
+  noc_flit_pkg::flit_t rs_flit, rr_flit;
+  logic rs_valid, rs_ready, rr_valid, rr_ready;
 
   ni_response_sender #(.DATA_W(DATA_W)) rs (
     .clk, .rst_n,
     .vc1_flit_in,
-    .vc1_flit_valid(vc1_flit_valid && vc1_wr_sel),
-    .vc1_flit_ready(),
+    .vc1_flit_valid(vc1_flit_valid && (vc1_flit_in.ftype == FLIT_HEADER) && !vc1_hdr_is_read && !vc1_hdr_is_resp),
+    .vc1_flit_ready(1'b1),
+    .local_coord(local_coord),
     .resp_flit_out(rs_flit),
     .resp_flit_valid(rs_valid),
     .resp_flit_ready(rs_ready)
   );
 
-  assign vc0_flit_out   = rs_valid ? rs_flit : (wp_valid ? wp_flit : rp_flit);
-  assign vc0_flit_valid = rs_valid || wp_valid || rp_valid;
+  ni_read_responder #(.DATA_W(DATA_W)) rr (
+    .clk, .rst_n,
+    .vc1_flit_in,
+    .vc1_flit_valid(vc1_flit_valid && (vc1_flit_in.ftype == FLIT_HEADER) && vc1_hdr_is_read && !vc1_hdr_is_resp),
+    .vc1_flit_ready(1'b1),
+    .local_coord(local_coord),
+    .resp_flit_out(rr_flit),
+    .resp_flit_valid(rr_valid),
+    .resp_flit_ready(rr_ready)
+  );
+
+  assign vc0_flit_out   = rs_valid ? rs_flit : (rr_valid ? rr_flit : (wp_valid ? wp_flit : rp_flit));
+  assign vc0_flit_valid = rs_valid || rr_valid || wp_valid || rp_valid;
   assign rs_ready       = vc0_flit_ready;
-  assign wp_ready       = !rs_valid && vc0_flit_ready;
-  assign rp_ready       = !rs_valid && !wp_valid && vc0_flit_ready;
+  assign rr_ready       = !rs_valid && vc0_flit_ready;
+  assign wp_ready       = !rs_valid && !rr_valid && vc0_flit_ready;
+  assign rp_ready       = !rs_valid && !rr_valid && !wp_valid && vc0_flit_ready;
 
-  // --- VC1 Receiver: Demux to write response and read data unpackers ---
-  // Simple demux: HEADER with response type → B; BODY/TAIL → R
-  logic vc1_wr_sel;  // 1 = B response (header), 0 = R data (body/tail)
-  assign vc1_wr_sel = vc1_flit_valid && (vc1_flit_in.ftype == FLIT_HEADER);
-
+  // --- VC1 Receiver: Demux to write/read unpackers ---
+  // Write response headers: HEADER && !is_read
+  // Read response: HEADER with is_read + all BODY/TAIL flits
   ni_write_unpacker #(.DATA_W(DATA_W)) wup (
     .clk, .rst_n,
     .flit_in(vc1_flit_in),
-    .flit_valid(vc1_flit_valid && vc1_wr_sel),
-    .flit_ready(),
+    .flit_valid(vc1_flit_valid && (vc1_flit_in.ftype == FLIT_HEADER) && !vc1_hdr_is_read && vc1_hdr_is_resp),
+    .flit_ready(1'b1),
     .bvalid, .bready, .bid, .bresp
   );
 
   ni_read_unpacker #(.DATA_W(DATA_W)) rup (
     .clk, .rst_n,
     .flit_in(vc1_flit_in),
-    .flit_valid(vc1_flit_valid && !vc1_wr_sel),
-    .flit_ready(),
+    .flit_valid(vc1_flit_valid && ((vc1_flit_in.ftype != FLIT_HEADER) || (vc1_hdr_is_read && vc1_hdr_is_resp))),
+    .flit_ready(1'b1),
     .rvalid, .rready, .rid, .rdata, .rresp, .rlast
   );
 

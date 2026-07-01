@@ -27,14 +27,18 @@ module output_port #(
   import noc_flit_pkg::*;
 
   logic [$clog2(VC_DEPTH):0] cnt;
+  logic dec, inc;
+
+  assign dec = xbar_valid_in && xbar_vc_in == my_vc && cnt > 0;
+  assign inc = credit_in;
 
   always_ff @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
       cnt <= VC_DEPTH;
     end else begin
-      if (xbar_valid_in && xbar_vc_in == my_vc && cnt > 0)
+      if (dec && !inc)
         cnt <= cnt - 1'b1;
-      if (credit_in)
+      else if (!dec && inc)
         cnt <= cnt + 1'b1;
     end
   end

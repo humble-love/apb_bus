@@ -20,6 +20,8 @@ class noc_driver extends uvm_driver #(axi_transaction);
 
   task run_phase(uvm_phase phase);
     axi_transaction tx;
+    // Wait for reset to deassert once at the start
+    @(posedge vif.rst_n);
     forever begin
       seq_item_port.get_next_item(tx);
       if (tx.is_write)
@@ -32,8 +34,6 @@ class noc_driver extends uvm_driver #(axi_transaction);
 
   task drive_write(axi_transaction tx);
     `uvm_info("NOC_DRV", "drive_write: starting AW+W", UVM_NONE)
-    // Wait for reset to be deasserted
-    @(posedge vif.rst_n);
     @(posedge vif.clk);
     // Drive AW and W channels in parallel
     // awready is initially 1 (aw_buf_empty), so AW handshake completes on first posedge
