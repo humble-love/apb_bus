@@ -10,7 +10,7 @@ VERDI_HOME=${VERDI_HOME:-/home/openclaw/hardware/Synopsys/Install/verdi/Verdi_O-
 PROJ_ROOT=$(dirname $(dirname $(readlink -f $0)))
 
 cd $PROJ_ROOT
-mkdir -p waves
+mkdir -p sim/waves
 
 # Ensure dc (desk calculator) is in PATH — VCS 2018 requires it
 if [ -x "$HOME/.local/bin/dc" ]; then
@@ -59,10 +59,10 @@ if [ "$(readlink -f /bin/sh)" = "/usr/bin/dash" ]; then
             $VERDI_PLI/pli.a \
             +vcs+lic+wait \
             -timescale=1ns/1ps \
-            -o simv \
-            -l compile.log \
+            -o sim/simv \
+            -l sim/compile.log \
             -f scripts/filelist.f \
-            pthread_yield_compat.o
+            sim/pthread_yield_compat.o
     "
 else
     export VCS_HOME
@@ -80,16 +80,23 @@ else
         $VERDI_PLI/pli.a \
         +vcs+lic+wait \
         -timescale=1ns/1ps \
-        -o simv \
-        -l compile.log \
+        -o sim/simv \
+        -l sim/compile.log \
         -f scripts/filelist.f \
-        pthread_yield_compat.o
+        sim/pthread_yield_compat.o
 fi
+
+# Move VCS-generated temp files into sim/
+[ -d csrc ] && mv csrc sim/csrc 2>/dev/null || true
+[ -f tr_db.log ] && mv tr_db.log sim/tr_db.log 2>/dev/null || true
+[ -f ucli.key ] && mv ucli.key sim/ucli.key 2>/dev/null || true
+[ -f vc_hdrs.h ] && mv vc_hdrs.h sim/vc_hdrs.h 2>/dev/null || true
+[ -f vlogan.log ] && mv vlogan.log sim/vlogan.log 2>/dev/null || true
 
 echo ""
 echo "[2/2] Build complete."
 echo ""
-echo "  simv generated successfully."
+echo "  sim/simv generated successfully."
 echo ""
 echo "  Run simulation:  ./scripts/run.sh [TEST_NAME]"
 echo "  View waveforms:  ./scripts/verdi.sh"

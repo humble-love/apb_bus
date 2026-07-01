@@ -22,12 +22,17 @@ echo "========================================="
 echo " Running Test: $TEST"
 echo "========================================="
 
-./simv \
+./sim/simv \
     +UVM_TESTNAME=$TEST \
     +fsdb+autoflush \
-    -l sim.log \
+    -l sim/sim.log \
     +vcs+lic+wait
 
+# Move VCS-generated temp files into sim/
+[ -f tr_db.log ] && mv tr_db.log sim/tr_db.log 2>/dev/null || true
+[ -f ucli.key ] && mv ucli.key sim/ucli.key 2>/dev/null || true
+[ -f vc_hdrs.h ] && mv vc_hdrs.h sim/vc_hdrs.h 2>/dev/null || true
+
 echo ""
-echo " Simulation complete. Log: sim.log"
-echo " Waveform: waves/apb.fsdb"
+echo " Simulation complete. Log: sim/sim.log"
+echo " Waveform: sim/waves/apb.fsdb"

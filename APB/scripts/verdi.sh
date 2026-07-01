@@ -24,6 +24,6 @@ echo "========================================="
 verdi \
     -sv \
     -f scripts/filelist.f \
-    -ssf waves/apb.fsdb \
+    -ssf sim/waves/apb.fsdb \
     -nologo \
     &

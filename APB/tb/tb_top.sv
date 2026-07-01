@@ -89,7 +89,7 @@ module tb_top;
 
     // FSDB dump for Verdi
     initial begin
-        $fsdbDumpfile("waves/apb.fsdb");
+        $fsdbDumpfile("sim/waves/apb.fsdb");
         $fsdbDumpvars(0, tb_top);
     end
 

@@ -16,9 +16,10 @@ verdi:
 	bash scripts/verdi.sh
 
 clean:
-	rm -rf simv simv.daidir compile.log sim.log
-	rm -rf waves/*.fsdb waves/*.vpd
+	rm -rf sim/simv sim/simv.daidir sim/compile.log sim/sim.log
+	rm -rf sim/waves/*.fsdb sim/waves/*.vpd sim/csrc sim/vc_hdrs.h
+	rm -rf sim/pthread_yield_compat.o
+	rm -rf sim/tr_db.log sim/ucli.key sim/vlogan.log
+	rm -rf sim/build sim/build2 sim/AN.DB
 	rm -rf verdiLog novas.conf novas_dump.log novas.rc
-	rm -rf AN.DB csrc vc_hdrs.h uvm_dpi.so*
-	rm -rf tr_db.log ucli.key vlogan.log build build2
-	rm -rf DVEfiles inter.vpd
+	rm -rf DVEfiles inter.vpd uvm_dpi.so*
