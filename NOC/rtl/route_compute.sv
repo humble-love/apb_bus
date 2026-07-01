@@ -3,12 +3,11 @@ module route_compute #(
   parameter int MESH_X = 8,
   parameter int MESH_Y = 8
 ) (
-  input  logic [3:0] src_x,
-  input  logic [3:0] src_y,
-  input  logic [3:0] dst_x,
-  input  logic [3:0] dst_y,
-  input  logic       port_disable [5],  // per-port disable for boundary tiles
-  output logic [4:0] next_port           // one-hot: {L,W,E,S,N}
+  input  logic [3:0]                 src_x,
+  input  logic [3:0]                 src_y,
+  input  logic [3:0]                 dst_x,
+  input  logic [3:0]                 dst_y,
+  output noc_config_pkg::port_dir_t  next_port
 );
   import noc_config_pkg::*;
 
@@ -18,16 +17,15 @@ module route_compute #(
   assign dy = dst_y - src_y;
 
   always_comb begin
-    next_port = 5'b00000;
     if (dx == 0 && dy == 0)
-      next_port[PORT_LOCAL] = 1'b1;
+      next_port = PORT_LOCAL;
     else if (dx > 0)
-      next_port[PORT_EAST]  = 1'b1;
+      next_port = PORT_EAST;
     else if (dx < 0)
-      next_port[PORT_WEST]  = 1'b1;
+      next_port = PORT_WEST;
     else if (dy > 0)
-      next_port[PORT_NORTH] = 1'b1;
-    else if (dy < 0)
-      next_port[PORT_SOUTH] = 1'b1;
+      next_port = PORT_NORTH;
+    else
+      next_port = PORT_SOUTH;
   end
 endmodule

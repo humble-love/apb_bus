@@ -103,7 +103,6 @@ module router_5port #(
         .src_y({1'b0, local_coord.y}),
         .dst_x(hdr_dst_x_4b),
         .dst_y(hdr_dst_y_4b),
-        .port_disable('{default: '0}),
         .next_port(route_result[g])
       );
     end
