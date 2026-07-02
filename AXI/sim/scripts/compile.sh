@@ -7,7 +7,7 @@ set -e
 # Configuration
 VCS_HOME=${VCS_HOME:-/home/openclaw/hardware/Synopsys/Install/vcs/O-2018.09-SP2}
 VERDI_HOME=${VERDI_HOME:-/home/openclaw/hardware/Synopsys/Install/verdi/Verdi_O-2018.09-SP2}
-PROJ_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+PROJ_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 
 cd "$PROJ_ROOT"
 mkdir -p waves
@@ -64,7 +64,8 @@ if [ "$(readlink -f /bin/sh)" = "/usr/bin/dash" ]; then
             -timescale=1ns/1ps \
             -o simv \
             -l compile.log \
-            -f scripts/filelist.f \
+            -f filelist/rtl.f \
+            -f sim/filelist/tb.f \
             pthread_yield_compat.o
     "
 else
@@ -83,7 +84,8 @@ else
         -timescale=1ns/1ps \
         -o simv \
         -l compile.log \
-        -f scripts/filelist.f \
+        -f filelist/rtl.f \
+        -f sim/filelist/tb.f \
         pthread_yield_compat.o
 fi
 

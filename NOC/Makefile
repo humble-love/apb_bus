@@ -5,13 +5,13 @@ TEST ?= noc_sanity_test
 all: compile
 
 compile:
-	bash scripts/compile.sh
+	bash sim/scripts/compile.sh
 
 run:
-	bash scripts/run.sh $(TEST)
+	bash sim/scripts/run.sh $(TEST)
 
 verdi:
-	bash scripts/verdi.sh
+	bash sim/scripts/verdi.sh
 
 clean:
 	rm -rf simv simv.daidir compile.log sim.log

@@ -1,0 +1,13 @@
++incdir+sim/tb
++incdir+rtl
+sim/tb/axi_if.sv
+sim/tb/axi_pkg.sv
+sim/tb/axi_master_driver.sv
+sim/tb/axi_master_monitor.sv
+sim/tb/axi_slave_monitor.sv
+sim/tb/axi_master_agent.sv
+sim/tb/axi_scoreboard.sv
+sim/tb/axi_env.sv
+sim/tb/sequence_lib.sv
+sim/tb/axi_test.sv
+sim/tb/tb_top.sv

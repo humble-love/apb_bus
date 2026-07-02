@@ -1,0 +1,9 @@
++incdir+rtl
+rtl/axi_master.sv
+rtl/axi_crossbar_wr.sv
+rtl/axi_crossbar_rd.sv
+rtl/axi_addr_decoder.sv
+rtl/axi_slave_sram.sv
+rtl/axi_slave_dfi.sv
+rtl/axi_interconnect.sv
+rtl/axi_top.sv

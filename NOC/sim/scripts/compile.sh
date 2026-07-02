@@ -4,7 +4,7 @@ set -e
 
 VCS_HOME=${VCS_HOME:-/home/openclaw/hardware/Synopsys/Install/vcs/O-2018.09-SP2}
 VERDI_HOME=${VERDI_HOME:-/home/openclaw/hardware/Synopsys/Install/verdi/Verdi_O-2018.09-SP2}
-PROJ_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+PROJ_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 
 cd "$PROJ_ROOT"
 mkdir -p waves
@@ -50,7 +50,7 @@ bwrap --bind / / --dev /dev --bind /bin/bash /usr/bin/dash bash -c "
         -o simv \
         -l compile.log \
         -f filelist/rtl.f \
-        -f filelist/tb.f \
+        -f sim/filelist/tb.f \
         pthread_yield_compat.o
 "
 

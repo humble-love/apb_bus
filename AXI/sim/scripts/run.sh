@@ -2,7 +2,7 @@
 set -e
 
 TEST=${1:-axi_sanity_test}
-PROJ_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+PROJ_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$PROJ_ROOT"
 
 mkdir -p waves

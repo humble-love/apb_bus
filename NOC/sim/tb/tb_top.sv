@@ -3,8 +3,8 @@
 
 module tb_top;
   import uvm_pkg::*;
-  import noc_config_pkg::*;
-  import noc_flit_pkg::*;
+  `include "noc_config.vh"
+  `include "noc_flit.vh"
 
   `include "uvm_macros.svh"
 
@@ -12,47 +12,47 @@ module tb_top;
   logic clk;
   logic rst_n;
 
-  localparam int N_TILES = MESH_Y * MESH_X;
+  localparam int N_TILES = `MESH_Y * `MESH_X;
 
   // 64 AXI interfaces — 1D array (VCS 2018: no 2D interface arrays)
-  noc_axi_if #(.DATA_W(DATA_W)) axi_if [0:N_TILES-1] (.clk, .rst_n);
+  noc_axi_if #(.DATA_W(`DATA_W)) axi_if [0:N_TILES-1] (.clk, .rst_n);
 
   // Intermediate 2D wires for connecting 1D interfaces → 2D DUT ports
-  logic [MESH_Y-1:0][MESH_X-1:0]        awvalid_w, awready_w;
-  logic [MESH_Y-1:0][MESH_X-1:0][31:0]  awaddr_w;
-  logic [MESH_Y-1:0][MESH_X-1:0][7:0]   awid_w, awlen_w;
-  logic [MESH_Y-1:0][MESH_X-1:0][1:0]   awburst_w;
-  logic [MESH_Y-1:0][MESH_X-1:0][3:0]   awsize_w, awlock_w, awqos_w;
-  logic [MESH_Y-1:0][MESH_X-1:0][1:0]   awcache_w;
+  logic [`MESH_Y-1:0][`MESH_X-1:0]        awvalid_w, awready_w;
+  logic [`MESH_Y-1:0][`MESH_X-1:0][31:0]  awaddr_w;
+  logic [`MESH_Y-1:0][`MESH_X-1:0][7:0]   awid_w, awlen_w;
+  logic [`MESH_Y-1:0][`MESH_X-1:0][1:0]   awburst_w;
+  logic [`MESH_Y-1:0][`MESH_X-1:0][3:0]   awsize_w, awlock_w, awqos_w;
+  logic [`MESH_Y-1:0][`MESH_X-1:0][1:0]   awcache_w;
 
-  logic [MESH_Y-1:0][MESH_X-1:0]        wvalid_w, wready_w;
-  logic [MESH_Y-1:0][MESH_X-1:0][DATA_W-1:0] wdata_w;
-  logic [MESH_Y-1:0][MESH_X-1:0][(DATA_W/8)-1:0] wstrb_w;
-  logic [MESH_Y-1:0][MESH_X-1:0]        wlast_w;
+  logic [`MESH_Y-1:0][`MESH_X-1:0]        wvalid_w, wready_w;
+  logic [`MESH_Y-1:0][`MESH_X-1:0][`DATA_W-1:0] wdata_w;
+  logic [`MESH_Y-1:0][`MESH_X-1:0][(`DATA_W/8)-1:0] wstrb_w;
+  logic [`MESH_Y-1:0][`MESH_X-1:0]        wlast_w;
 
-  logic [MESH_Y-1:0][MESH_X-1:0]        bvalid_w, bready_w;
-  logic [MESH_Y-1:0][MESH_X-1:0][7:0]   bid_w;
-  logic [MESH_Y-1:0][MESH_X-1:0][1:0]   bresp_w;
+  logic [`MESH_Y-1:0][`MESH_X-1:0]        bvalid_w, bready_w;
+  logic [`MESH_Y-1:0][`MESH_X-1:0][7:0]   bid_w;
+  logic [`MESH_Y-1:0][`MESH_X-1:0][1:0]   bresp_w;
 
-  logic [MESH_Y-1:0][MESH_X-1:0]        arvalid_w, arready_w;
-  logic [MESH_Y-1:0][MESH_X-1:0][31:0]  araddr_w;
-  logic [MESH_Y-1:0][MESH_X-1:0][7:0]   arid_w, arlen_w;
-  logic [MESH_Y-1:0][MESH_X-1:0][1:0]   arburst_w;
-  logic [MESH_Y-1:0][MESH_X-1:0][3:0]   arsize_w, arlock_w, arqos_w;
-  logic [MESH_Y-1:0][MESH_X-1:0][1:0]   arcache_w;
+  logic [`MESH_Y-1:0][`MESH_X-1:0]        arvalid_w, arready_w;
+  logic [`MESH_Y-1:0][`MESH_X-1:0][31:0]  araddr_w;
+  logic [`MESH_Y-1:0][`MESH_X-1:0][7:0]   arid_w, arlen_w;
+  logic [`MESH_Y-1:0][`MESH_X-1:0][1:0]   arburst_w;
+  logic [`MESH_Y-1:0][`MESH_X-1:0][3:0]   arsize_w, arlock_w, arqos_w;
+  logic [`MESH_Y-1:0][`MESH_X-1:0][1:0]   arcache_w;
 
-  logic [MESH_Y-1:0][MESH_X-1:0]        rvalid_w, rready_w;
-  logic [MESH_Y-1:0][MESH_X-1:0][7:0]   rid_w;
-  logic [MESH_Y-1:0][MESH_X-1:0][DATA_W-1:0] rdata_w;
-  logic [MESH_Y-1:0][MESH_X-1:0][1:0]   rresp_w;
-  logic [MESH_Y-1:0][MESH_X-1:0]        rlast_w;
+  logic [`MESH_Y-1:0][`MESH_X-1:0]        rvalid_w, rready_w;
+  logic [`MESH_Y-1:0][`MESH_X-1:0][7:0]   rid_w;
+  logic [`MESH_Y-1:0][`MESH_X-1:0][`DATA_W-1:0] rdata_w;
+  logic [`MESH_Y-1:0][`MESH_X-1:0][1:0]   rresp_w;
+  logic [`MESH_Y-1:0][`MESH_X-1:0]        rlast_w;
 
   // DUT instantiation — connect via 2D wire arrays
   mesh_8x8 #(
-    .MESH_X(MESH_X), .MESH_Y(MESH_Y),
-    .VC_NUM(VC_NUM), .VC_DEPTH(VC_DEPTH),
-    .DATA_W(DATA_W), .QOS_W(QOS_W), .PRIO_LEVELS(PRIO_LEVELS),
-    .NI_FIFO_DEPTH(NI_FIFO_DEPTH), .MAX_OUTSTANDING(MAX_OUTSTANDING)
+    .MESH_X(`MESH_X), .MESH_Y(`MESH_Y),
+    .VC_NUM(`VC_NUM), .VC_DEPTH(`VC_DEPTH),
+    .DATA_W(`DATA_W), .QOS_W(`QOS_W), .PRIO_LEVELS(`PRIO_LEVELS),
+    .NI_FIFO_DEPTH(`NI_FIFO_DEPTH), .MAX_OUTSTANDING(`MAX_OUTSTANDING)
   ) dut (
     .clk, .rst_n,
     .awvalid(awvalid_w), .awready(awready_w), .awaddr(awaddr_w),
@@ -81,9 +81,9 @@ module tb_top;
   // Connect 1D interfaces ↔ 2D wire arrays (IDX = y*MESH_X + x)
   genvar x, y;
   generate
-    for (y = 0; y < MESH_Y; y++) begin : y_gen
-      for (x = 0; x < MESH_X; x++) begin : x_gen
-        localparam int IDX = y * MESH_X + x;
+    for (y = 0; y < `MESH_Y; y++) begin : y_gen
+      for (x = 0; x < `MESH_X; x++) begin : x_gen
+        localparam int IDX = y * `MESH_X + x;
 
         // Default: tie off unused AXI inputs for tiles without BFM
         if (IDX != 0) begin : tie_off

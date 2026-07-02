@@ -1,0 +1,12 @@
++incdir+sim/tb
++incdir+rtl
+sim/tb/noc_if.sv
+sim/tb/noc_pkg.sv
+sim/tb/noc_scoreboard.sv
+sim/tb/noc_driver.sv
+sim/tb/noc_monitor.sv
+sim/tb/noc_agent.sv
+sim/tb/noc_env.sv
+sim/tb/noc_sequence.sv
+sim/tb/noc_test.sv
+sim/tb/tb_top.sv
