@@ -1,3 +1,3 @@
 #!/bin/bash
-verdi -sv -f filelist/rtl.f -f filelist/tb.f \
-  -ssf waves/noc.fsdb -nologo &
+verdi -sv -f filelist/rtl.f -f sim/filelist/tb.f \
+  -ssf sim/waves/noc.fsdb -nologo &
